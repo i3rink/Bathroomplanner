@@ -414,7 +414,7 @@ function onDown(e) {
       saveHistory();
       isResizing = true;
       resizeItem = curSel;
-      resizeStart = {gx, gy, origW: curSel.w, origH: curSel.h};
+      resizeStart = {gx, gy, origW: curSel.w, origH: curSel.h, origBaseW: curSel.baseW || curSel.w, origBaseH: curSel.baseH || curSel.h};
       return;
     }
     const idx = hitTest(gx, gy);
@@ -447,6 +447,14 @@ function onMove(e) {
   } else if (isResizing && resizeItem && resizeStart) {
     resizeItem.w = clamp(resizeStart.origW + (gx - resizeStart.gx), 1, COLS - resizeItem.x);
     resizeItem.h = clamp(resizeStart.origH + (gy - resizeStart.gy), 1, ROWS - resizeItem.y);
+    // Keep canonical base dimensions in sync with current rotation
+    if ((resizeItem.rotation || 0) % 2 === 0) {
+      resizeItem.baseW = resizeItem.w;
+      resizeItem.baseH = resizeItem.h;
+    } else {
+      resizeItem.baseW = resizeItem.h;
+      resizeItem.baseH = resizeItem.w;
+    }
     updateSelectedPanel();
     render();
   } else if (mode === 'select' && isDragging && dragStart) {
