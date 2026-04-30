@@ -69,6 +69,8 @@
   .size-row input:focus { border-color: var(--accent); }
   .size-row span { font-size: 10px; color: var(--text-dim); }
   .size-hint { font-size: 10px; color: var(--text-dim); margin-top: 2px; font-family: 'DM Mono', monospace; }
+  .rotate-btn { width: 100%; margin-top: 6px; font-size: 11px; display: flex; align-items: center;
+    justify-content: center; gap: 5px; }
 
   .canvas-wrap { flex: 1; overflow: auto; background: var(--bg); }
   #mainCanvas { display: block; cursor: crosshair; touch-action: none; }
@@ -131,6 +133,7 @@
       </div>
     </div>
 
+    <!-- Selected fixture controls — shown when something is selected -->
     <div class="selected-panel" id="selectedPanel">
       <div class="panel-title" id="selectedTitle">Selected</div>
       <div class="size-row">
@@ -144,7 +147,8 @@
         <span>cells</span>
       </div>
       <div class="size-hint" id="sizeHint"></div>
-      <button class="btn danger" style="width:100%;margin-top:8px;font-size:11px;" onclick="deleteSelected()">Delete fixture</button>
+      <button class="btn rotate-btn" onclick="rotateSelected()">↻ Rotate 90°</button>
+      <button class="btn danger" style="width:100%;margin-top:6px;font-size:11px;" onclick="deleteSelected()">Delete fixture</button>
     </div>
 
     <div class="sidebar-section">
@@ -154,7 +158,7 @@
         <button class="tool-btn" onclick="setMode('place','shower')"><span class="icon">🚿</span>Shower</button>
         <button class="tool-btn" onclick="setMode('place','wc')"><span class="icon">🚽</span>WC</button>
         <button class="tool-btn" onclick="setMode('place','basin')"><span class="icon">🚰</span>Basin</button>
-        <button class="tool-btn" onclick="setMode('place','bidet')"><span class="icon">🪠</span>Bidet</button>
+        <button class="tool-btn" onclick="setMode('place','furniture')"><span class="icon">🪞</span>Furniture</button>
         <button class="tool-btn" onclick="setMode('place','storage')"><span class="icon">🗄</span>Storage</button>
       </div>
     </div>
@@ -185,7 +189,8 @@
       <div class="dim-display" style="font-size:11px;color:var(--text-dim);line-height:1.7;">
         1 cell = 30cm<br>
         Max grid = 9m × 9m<br>
-        Select item to resize
+        Click item = select it<br>
+        R key = rotate selected
       </div>
     </div>
 
@@ -220,29 +225,29 @@ const ctx = canvas.getContext('2d');
 canvas.width = COLS * CELL + 1;
 canvas.height = ROWS * CELL + 1;
 
-// Default sizes in grid cells (1 cell = 30cm)
-// Bath 1800×700 = 6×2, Shower 900×900 = 3×3, WC 360×600 ≈ 2×2, Basin 600×400 ≈ 2×2
+// Default sizes: 1 cell = 30cm
+// Rotation swaps w/h — shape drawing handles orientation via item.rotated flag
 const FIXTURE_DEFS = {
   bath:      { w:6, h:2, label:'Bath',       color:'#4f8ef7', shape:'bath',
-               hint:'Default 1800×600mm. Adjust for 1700, 1500, P-shape etc.' },
+               hint:'Default 1800×600mm. Select then Rotate for end-wall fit.' },
   shower:    { w:3, h:3, label:'Shower',     color:'#a0c4ff', shape:'shower',
-               hint:'Default 900×900mm. Adjust for 1200×900, 1000×800 etc.' },
+               hint:'Default 900×900mm. Resize for 1200×900 etc.' },
   wc:        { w:2, h:2, label:'WC',         color:'#f7c94f', shape:'wc',
-               hint:'Default 600×600mm. Adjust for wall-hung, close-coupled etc.' },
+               hint:'Default 600×600mm. Rotate to face any wall.' },
   basin:     { w:2, h:2, label:'Basin',      color:'#4ff7c9', shape:'basin',
-               hint:'Default 600×600mm. Adjust for 500mm, 400mm cloakroom etc.' },
-  bidet:     { w:2, h:2, label:'Bidet',      color:'#c94ff7', shape:'bidet',
-               hint:'Default 600×600mm.' },
+               hint:'Default 600×600mm. Rotate to mount on any wall.' },
+  furniture: { w:4, h:2, label:'Furniture',  color:'#b07fff', shape:'furniture',
+               hint:'Vanity unit / fitted furniture. Resize to match.' },
   storage:   { w:3, h:2, label:'Storage',    color:'#8a8a8a', shape:'rect',
-               hint:'Adjust to match actual unit dimensions.' },
+               hint:'Freestanding storage. Adjust to match dimensions.' },
   window:    { w:3, h:1, label:'Window',     color:'#a0e0ff', shape:'window',
-               hint:'Adjust W to match the opening width.' },
+               hint:'Rotate to place on side walls.' },
   door:      { w:2, h:2, label:'Door',       color:'#f7a04f', shape:'door',
-               hint:'W = leaf width. Arc shows swing direction.' },
+               hint:'Rotate to change which wall and swing direction.' },
   towelrail: { w:3, h:1, label:'Towel Rail', color:'#f74f8e', shape:'rail',
-               hint:'Adjust W to match rail length.' },
+               hint:'Default horizontal. Rotate to place vertically.' },
   radiator:  { w:3, h:1, label:'Radiator',   color:'#f76a4f', shape:'radiator',
-               hint:'Adjust W to match radiator width.' },
+               hint:'Default horizontal. Rotate to place vertically.' },
   pipe:      { w:1, h:1, label:'Pipe',       color:'#aaa',    shape:'pipe',
                hint:'One cell = pipe or soil stack location.' },
   drain:     { w:1, h:1, label:'Drain',      color:'#7b82a0', shape:'drain',
@@ -257,6 +262,7 @@ let resizeStart = null, resizeItem = null;
 let selectedIdx = null, pendingNotePos = null;
 let history = [];
 
+// ── HISTORY ──
 function saveHistory() {
   history.push({
     room: room ? {...room} : null,
@@ -275,6 +281,13 @@ function undoLast() {
   updateDims(); updateSelectedPanel(); render();
 }
 
+// ── SAFE ITEM ACCESS ──
+function safeItem() {
+  if (selectedIdx === null || selectedIdx < 0 || selectedIdx >= items.length) return null;
+  return items[selectedIdx];
+}
+
+// ── INPUT ──
 function getPos(e) {
   const r = canvas.getBoundingClientRect();
   let cx, cy;
@@ -285,6 +298,7 @@ function getPos(e) {
 
 function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
+// ── MODE ──
 function setMode(m, type) {
   mode = m; placeType = type || null;
   if (m !== 'select') { selectedIdx = null; updateSelectedPanel(); }
@@ -292,23 +306,17 @@ function setMode(m, type) {
   const btn = document.getElementById('tool-' + m);
   if (btn) btn.classList.add('active');
   const hints = {
-    room:   'Click and drag to draw the room — snaps to grid. Use "Redo Room" to redraw without losing fixtures.',
-    select: 'Click a fixture to select it. Drag to move. Use W/H inputs or drag the corner handle to resize.',
+    room:   'Click and drag to draw the room. "Redo Room" redraws without losing fixtures.',
+    select: 'Click a fixture to select it. Drag to move. Rotate or resize in the panel.',
     erase:  'Click any fixture or note to remove it.',
     note:   'Click anywhere on the plan to add a text note.',
-    place:  type ? `Placing ${FIXTURE_DEFS[type].label} — click to drop. ${FIXTURE_DEFS[type].hint}` : '',
+    place:  type ? `Placing ${FIXTURE_DEFS[type].label}. Click an empty area to place, or click an existing item to select it instead.` : '',
   };
   document.getElementById('hintText').textContent = hints[m] || '';
   render();
 }
 
-// Redo room without losing fixtures
-function redrawRoom() {
-  saveHistory();
-  room = null;
-  updateDims();
-  setMode('room');
-}
+function redrawRoom() { saveHistory(); room = null; updateDims(); setMode('room'); }
 
 function clearAll() {
   if (!confirm('Clear everything and start fresh?')) return;
@@ -317,7 +325,31 @@ function clearAll() {
   updateDims(); updateSelectedPanel(); render();
 }
 
-// Resize handle: bottom-right corner of selected item
+// ── ROTATE ──
+function rotateSelected() {
+  const it = safeItem();
+  if (!it) return;
+  saveHistory();
+  // Swap w and h, keep top-left in bounds
+  const newW = it.h, newH = it.w;
+  it.w = clamp(newW, 1, COLS - it.x);
+  it.h = clamp(newH, 1, ROWS - it.y);
+  // toggle rotation flag for shape drawing
+  it.rotated = !it.rotated;
+  updateSelectedPanel();
+  render();
+}
+
+// keyboard shortcut
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'r' || e.key === 'R') rotateSelected();
+  if (e.key === 'Escape') { selectedIdx = null; updateSelectedPanel(); render(); }
+  if ((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey)) { e.preventDefault(); undoLast(); }
+  if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
+});
+
+// ── RESIZE HANDLE ──
 function resizeHandlePos(item) {
   return { rx: (item.x + item.w) * CELL - 1, ry: (item.y + item.h) * CELL - 1 };
 }
@@ -326,6 +358,7 @@ function onResizeHandle(px, py, item) {
   return Math.abs(px - rx) < 11 && Math.abs(py - ry) < 11;
 }
 
+// ── EVENTS ──
 canvas.addEventListener('mousedown', onDown);
 canvas.addEventListener('mousemove', onMove);
 canvas.addEventListener('mouseup',   onUp);
@@ -343,13 +376,23 @@ function onDown(e) {
     dragCurrent = {...dragStart};
 
   } else if (mode === 'place' && placeType) {
+    // If clicking on an existing item, select it instead of placing a new one
+    const existing = hitTest(gx, gy);
+    if (existing >= 0) {
+      selectedIdx = existing;
+      setMode('select');
+      updateSelectedPanel();
+      render();
+      return;
+    }
     saveHistory();
     const d = FIXTURE_DEFS[placeType];
     items.push({
       type: placeType,
       x: clamp(gx, room ? room.x : 0, room ? room.x + room.w - d.w : COLS - d.w),
       y: clamp(gy, room ? room.y : 0, room ? room.y + room.h - d.h : ROWS - d.h),
-      w: d.w, h: d.h
+      w: d.w, h: d.h,
+      rotated: false
     });
     render();
 
@@ -382,11 +425,6 @@ function onDown(e) {
     document.getElementById('noteModal').classList.add('open');
     setTimeout(() => document.getElementById('noteInput').focus(), 80);
   }
-}
-
-function safeItem() {
-  if (selectedIdx === null || selectedIdx < 0 || selectedIdx >= items.length) return null;
-  return items[selectedIdx];
 }
 
 function onMove(e) {
@@ -438,6 +476,7 @@ function hitTest(gx, gy) {
   }
   return -1;
 }
+
 function noteHitTest(gx, gy) {
   for (let i = notes.length - 1; i >= 0; i--) {
     if (Math.abs(notes[i].x - gx) <= 1 && Math.abs(notes[i].y - gy) <= 1) return i;
@@ -445,41 +484,35 @@ function noteHitTest(gx, gy) {
   return -1;
 }
 
+// ── SELECTED PANEL ──
 function updateSelectedPanel() {
   const panel = document.getElementById('selectedPanel');
-  if (selectedIdx === null || selectedIdx < 0 || selectedIdx >= items.length) {
-    panel.classList.remove('visible'); return;
-  }
-  const it = items[selectedIdx];
+  const it = safeItem();
+  if (!it) { panel.classList.remove('visible'); return; }
   const def = FIXTURE_DEFS[it.type];
   panel.classList.add('visible');
-  document.getElementById('selectedTitle').textContent = def.label + ' — resize';
+  document.getElementById('selectedTitle').textContent = def.label;
   document.getElementById('sizeW').value = it.w;
   document.getElementById('sizeH').value = it.h;
-  document.getElementById('sizeHint').textContent =
-    `${(it.w*300).toFixed(0)}mm × ${(it.h*300).toFixed(0)}mm`;
+  document.getElementById('sizeHint').textContent = `${it.w*300}mm × ${it.h*300}mm`;
   document.getElementById('hintText').textContent = def.hint;
 }
 
 function resizeSelected() {
-  if (selectedIdx === null || selectedIdx < 0) return;
-  const it = items[selectedIdx];
+  const it = safeItem(); if (!it) return;
   it.w = clamp(parseInt(document.getElementById('sizeW').value)||1, 1, COLS - it.x);
   it.h = clamp(parseInt(document.getElementById('sizeH').value)||1, 1, ROWS - it.y);
-  document.getElementById('sizeHint').textContent =
-    `${(it.w*300).toFixed(0)}mm × ${(it.h*300).toFixed(0)}mm`;
+  document.getElementById('sizeHint').textContent = `${it.w*300}mm × ${it.h*300}mm`;
   render();
 }
 
 function deleteSelected() {
-  if (selectedIdx === null || selectedIdx < 0) return;
-  saveHistory();
-  items.splice(selectedIdx, 1);
-  selectedIdx = null;
-  updateSelectedPanel();
-  render();
+  const it = safeItem(); if (!it) return;
+  saveHistory(); items.splice(selectedIdx, 1);
+  selectedIdx = null; updateSelectedPanel(); render();
 }
 
+// ── NOTES ──
 function closeNoteModal() { document.getElementById('noteModal').classList.remove('open'); }
 function confirmNote() {
   const text = document.getElementById('noteInput').value.trim();
@@ -488,6 +521,7 @@ function confirmNote() {
 }
 document.getElementById('noteInput').addEventListener('keydown', e => { if (e.key === 'Enter') confirmNote(); });
 
+// ── DIMENSIONS ──
 function updateDims() {
   if (!room) { ['dimW','dimH','dimA'].forEach(id => document.getElementById(id).textContent = '—'); return; }
   document.getElementById('dimW').textContent = (room.w * 0.3).toFixed(2) + 'm';
@@ -495,7 +529,9 @@ function updateDims() {
   document.getElementById('dimA').textContent = (room.w * room.h * 0.09).toFixed(2) + 'm²';
 }
 
-// ═══════════ RENDER ═══════════
+// ═══════════════════════════════
+// RENDER
+// ═══════════════════════════════
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawGrid();
@@ -507,21 +543,28 @@ function render() {
 }
 
 function drawGrid() {
+  // Fine grid lines
   for (let c = 0; c <= COLS; c++) {
     ctx.beginPath(); ctx.moveTo(c*CELL+0.5, 0); ctx.lineTo(c*CELL+0.5, ROWS*CELL);
-    ctx.strokeStyle = c%5===0 ? '#252940' : '#181c2c';
+    ctx.strokeStyle = c%5===0 ? '#3a4060' : '#242840';
     ctx.lineWidth = c%5===0 ? 1 : 0.5; ctx.stroke();
   }
   for (let r = 0; r <= ROWS; r++) {
     ctx.beginPath(); ctx.moveTo(0, r*CELL+0.5); ctx.lineTo(COLS*CELL, r*CELL+0.5);
-    ctx.strokeStyle = r%5===0 ? '#252940' : '#181c2c';
+    ctx.strokeStyle = r%5===0 ? '#3a4060' : '#242840';
     ctx.lineWidth = r%5===0 ? 1 : 0.5; ctx.stroke();
   }
-  ctx.fillStyle = '#2a3050'; ctx.font = '9px DM Mono, monospace';
+  // Dimension labels — bright so they're actually readable
+  ctx.fillStyle = '#7a8ab8';
+  ctx.font = '9px DM Mono, monospace';
   ctx.textAlign = 'center';
-  for (let c = 5; c <= COLS; c += 5) ctx.fillText((c*0.3).toFixed(1)+'m', c*CELL, 9);
+  for (let c = 5; c <= COLS; c += 5) {
+    ctx.fillText((c*0.3).toFixed(1)+'m', c*CELL, 9);
+  }
   ctx.textAlign = 'left';
-  for (let r = 5; r <= ROWS; r += 5) ctx.fillText((r*0.3).toFixed(1)+'m', 2, r*CELL-3);
+  for (let r = 5; r <= ROWS; r += 5) {
+    ctx.fillText((r*0.3).toFixed(1)+'m', 2, r*CELL - 3);
+  }
 }
 
 function drawRoom() {
@@ -530,7 +573,9 @@ function drawRoom() {
   ctx.fillStyle = 'rgba(79,142,247,0.05)'; ctx.fillRect(px,py,pw,ph);
   ctx.strokeStyle = '#4f8ef7'; ctx.lineWidth = 2.5;
   ctx.strokeRect(px+1, py+1, pw-2, ph-2);
-  ctx.fillStyle = '#ffffff'; ctx.font = 'bold 12px DM Sans, sans-serif';
+  // White dimension labels on room outline
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 12px DM Sans, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText((w*0.3).toFixed(2)+'m', px+pw/2, py-5);
   ctx.save(); ctx.translate(px-7, py+ph/2); ctx.rotate(-Math.PI/2);
@@ -543,7 +588,7 @@ function drawDragPreview() {
   const dw=Math.abs(dragCurrent.gx-dragStart.gx), dh=Math.abs(dragCurrent.gy-dragStart.gy);
   ctx.strokeStyle='rgba(79,142,247,0.7)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
   ctx.strokeRect(x1,y1,x2-x1,y2-y1); ctx.setLineDash([]);
-  if (dw>0&&dh>0) {
+  if (dw>0 && dh>0) {
     ctx.fillStyle='#ffffff'; ctx.font='bold 11px DM Mono, monospace'; ctx.textAlign='center';
     ctx.fillText(`${(dw*0.3).toFixed(2)}m × ${(dh*0.3).toFixed(2)}m`, x1+(x2-x1)/2, y1+(y2-y1)/2);
   }
@@ -551,7 +596,10 @@ function drawDragPreview() {
 
 function drawFixture(item, selected) {
   const x=item.x*CELL, y=item.y*CELL, w=item.w*CELL, h=item.h*CELL;
-  const def=FIXTURE_DEFS[item.type], col=def.color, cx=x+w/2, cy=y+h/2;
+  const def=FIXTURE_DEFS[item.type], col=def.color;
+  const cx=x+w/2, cy=y+h/2;
+  const rot = item.rotated || false;
+
   ctx.save();
   ctx.fillStyle=col+'18';
   ctx.strokeStyle=selected?'#ffffff':col;
@@ -559,14 +607,27 @@ function drawFixture(item, selected) {
   ctx.beginPath(); ctx.roundRect(x+2,y+2,w-4,h-4,3); ctx.fill(); ctx.stroke();
   ctx.strokeStyle=col; ctx.lineWidth=1.2;
 
+  // All shape drawing is done in the item's own coordinate space.
+  // For rotated items we render using the swapped w/h naturally —
+  // the shape functions are written to handle both orientations.
+
   if (def.shape==='bath') {
+    // Outer rim
     ctx.beginPath(); ctx.ellipse(cx,cy,w/2-5,h/2-4,0,0,Math.PI*2); ctx.stroke();
+    // Inner bowl
     ctx.fillStyle=col+'25';
     ctx.beginPath(); ctx.ellipse(cx,cy,w/2-9,h/2-7,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    // Taps (always on narrower end)
     ctx.fillStyle=col;
-    ctx.beginPath(); ctx.arc(x+9,cy-5,2.5,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(x+9,cy+5,2.5,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(x+w-10,cy,3,0,Math.PI*2); ctx.stroke();
+    if (!rot) {
+      ctx.beginPath(); ctx.arc(x+9,cy-5,2.5,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x+9,cy+5,2.5,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x+w-10,cy,3,0,Math.PI*2); ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.arc(cx-5,y+9,2.5,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx+5,y+9,2.5,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx,y+h-10,3,0,Math.PI*2); ctx.stroke();
+    }
 
   } else if (def.shape==='shower') {
     ctx.beginPath(); ctx.arc(cx,cy,5,0,Math.PI*2); ctx.stroke();
@@ -577,72 +638,126 @@ function drawFixture(item, selected) {
     ctx.setLineDash([]);
 
   } else if (def.shape==='wc') {
-    const cisH=h*0.32;
-    ctx.beginPath(); ctx.roundRect(x+4,y+2,w-8,cisH,2); ctx.stroke();
-    const bcy=y+cisH+(h-cisH)*0.5;
-    ctx.fillStyle=col+'28';
-    ctx.beginPath(); ctx.ellipse(cx,bcy,w/2-5,(h-cisH)/2-3,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    // Cistern at top (or left if rotated)
+    if (!rot) {
+      const cisH=h*0.32;
+      ctx.beginPath(); ctx.roundRect(x+4,y+2,w-8,cisH,2); ctx.stroke();
+      const bcy=y+cisH+(h-cisH)*0.5;
+      ctx.fillStyle=col+'28';
+      ctx.beginPath(); ctx.ellipse(cx,bcy,w/2-5,(h-cisH)/2-3,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    } else {
+      const cisW=w*0.32;
+      ctx.beginPath(); ctx.roundRect(x+2,y+4,cisW,h-8,2); ctx.stroke();
+      const bcx=x+cisW+(w-cisW)*0.5;
+      ctx.fillStyle=col+'28';
+      ctx.beginPath(); ctx.ellipse(bcx,cy,(w-cisW)/2-3,h/2-5,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    }
 
   } else if (def.shape==='basin') {
-    // Plan-view wash hand basin: flat back, rounded front bowl
-    const m=3;
-    ctx.beginPath();
-    ctx.moveTo(x+m, y+m);
-    ctx.lineTo(x+w-m, y+m);
-    ctx.lineTo(x+w-m, y+h*0.38);
-    ctx.quadraticCurveTo(x+w-m, y+h-m, cx, y+h-m);
-    ctx.quadraticCurveTo(x+m, y+h-m, x+m, y+h*0.38);
-    ctx.lineTo(x+m, y+m);
-    ctx.closePath();
-    ctx.fillStyle=col+'28'; ctx.fill(); ctx.stroke();
-    // overflow at top centre
-    ctx.beginPath(); ctx.ellipse(cx, y+m+5, w*0.12, 2.5, 0, 0, Math.PI*2); ctx.stroke();
-    // plug hole
-    ctx.fillStyle=col; ctx.beginPath(); ctx.arc(cx, cy+5, 2.5, 0, Math.PI*2); ctx.fill();
-    // tap holes
-    ctx.fillStyle=col+'aa';
-    ctx.beginPath(); ctx.arc(cx-8,y+m+3,2,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(cx+8,y+m+3,2,0,Math.PI*2); ctx.fill();
+    if (!rot) {
+      const m=3;
+      ctx.beginPath();
+      ctx.moveTo(x+m,y+m); ctx.lineTo(x+w-m,y+m);
+      ctx.lineTo(x+w-m,y+h*0.38);
+      ctx.quadraticCurveTo(x+w-m,y+h-m,cx,y+h-m);
+      ctx.quadraticCurveTo(x+m,y+h-m,x+m,y+h*0.38);
+      ctx.lineTo(x+m,y+m); ctx.closePath();
+      ctx.fillStyle=col+'28'; ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(cx,y+m+5,w*0.12,2.5,0,0,Math.PI*2); ctx.stroke();
+      ctx.fillStyle=col; ctx.beginPath(); ctx.arc(cx,cy+5,2.5,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle=col+'aa';
+      ctx.beginPath(); ctx.arc(cx-8,y+m+3,2,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx+8,y+m+3,2,0,Math.PI*2); ctx.fill();
+    } else {
+      // Rotated: back wall on left
+      const m=3;
+      ctx.beginPath();
+      ctx.moveTo(x+m,y+m); ctx.lineTo(x+m,y+h-m);
+      ctx.lineTo(x+w*0.38,y+h-m);
+      ctx.quadraticCurveTo(x+w-m,y+h-m,x+w-m,cy);
+      ctx.quadraticCurveTo(x+w-m,y+m,x+w*0.38,y+m);
+      ctx.lineTo(x+m,y+m); ctx.closePath();
+      ctx.fillStyle=col+'28'; ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(x+m+5,cy,2.5,h*0.12,0,0,Math.PI*2); ctx.stroke();
+      ctx.fillStyle=col; ctx.beginPath(); ctx.arc(cx+5,cy,2.5,0,Math.PI*2); ctx.fill();
+    }
 
-  } else if (def.shape==='bidet') {
-    const m=3;
-    ctx.beginPath();
-    ctx.moveTo(x+m,y+m); ctx.lineTo(x+w-m,y+m);
-    ctx.lineTo(x+w-m,y+h*0.45);
-    ctx.quadraticCurveTo(x+w-m,y+h-m,cx,y+h-m);
-    ctx.quadraticCurveTo(x+m,y+h-m,x+m,y+h*0.45);
-    ctx.lineTo(x+m,y+m); ctx.closePath();
-    ctx.fillStyle=col+'28'; ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.roundRect(x+4,y+2,w-8,h*0.28,2); ctx.stroke();
+  } else if (def.shape==='furniture') {
+    // Vanity unit — rectangular with sink cutout and door lines
+    ctx.beginPath(); ctx.rect(x+3,y+3,w-6,h-6); ctx.stroke();
+    // Door gap lines
+    const doors = Math.max(1, Math.round((w-6)/40));
+    const doorW = (w-6)/doors;
+    for (let d=1; d<doors; d++) {
+      const lx = x+3+d*doorW;
+      ctx.beginPath(); ctx.moveTo(lx,y+3); ctx.lineTo(lx,y+h-3); ctx.stroke();
+    }
+    // Handles
+    for (let d=0; d<doors; d++) {
+      const hx = x+3+(d+0.5)*doorW;
+      ctx.fillStyle=col;
+      ctx.beginPath(); ctx.roundRect(hx-6,cy-2,12,4,2); ctx.fill();
+    }
+    // Small sink circle top-right
+    ctx.beginPath(); ctx.arc(x+w-14,y+12,5,0,Math.PI*2); ctx.stroke();
 
   } else if (def.shape==='window') {
-    ctx.lineWidth=2.5;
-    ctx.beginPath(); ctx.moveTo(x+2,y+2); ctx.lineTo(x+w-2,y+2); ctx.stroke();
-    ctx.lineWidth=1;
-    ctx.beginPath(); ctx.moveTo(cx,y+2); ctx.lineTo(cx,y+h-2); ctx.stroke();
-    ctx.setLineDash([2,2]);
-    ctx.beginPath(); ctx.moveTo(x+4,y+h-4); ctx.lineTo(x+w-4,y+h-4); ctx.stroke();
-    ctx.setLineDash([]);
+    if (!rot) {
+      ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(x+2,y+2); ctx.lineTo(x+w-2,y+2); ctx.stroke();
+      ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(cx,y+2); ctx.lineTo(cx,y+h-2); ctx.stroke();
+      ctx.setLineDash([2,2]);
+      ctx.beginPath(); ctx.moveTo(x+4,y+h-4); ctx.lineTo(x+w-4,y+h-4); ctx.stroke();
+      ctx.setLineDash([]);
+    } else {
+      ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(x+2,y+2); ctx.lineTo(x+2,y+h-2); ctx.stroke();
+      ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(x+2,cy); ctx.lineTo(x+w-2,cy); ctx.stroke();
+      ctx.setLineDash([2,2]);
+      ctx.beginPath(); ctx.moveTo(x+w-4,y+4); ctx.lineTo(x+w-4,y+h-4); ctx.stroke();
+      ctx.setLineDash([]);
+    }
 
   } else if (def.shape==='door') {
-    ctx.lineWidth=2;
-    ctx.beginPath(); ctx.moveTo(x+3,y+3); ctx.lineTo(x+w-3,y+3); ctx.stroke();
-    ctx.lineWidth=1; ctx.setLineDash([3,3]);
-    ctx.beginPath(); ctx.arc(x+3,y+3,w-6,0,Math.PI/2); ctx.stroke();
-    ctx.setLineDash([]);
+    if (!rot) {
+      ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x+3,y+3); ctx.lineTo(x+w-3,y+3); ctx.stroke();
+      ctx.lineWidth=1; ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.arc(x+3,y+3,w-6,0,Math.PI/2); ctx.stroke();
+      ctx.setLineDash([]);
+    } else {
+      ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x+3,y+3); ctx.lineTo(x+3,y+h-3); ctx.stroke();
+      ctx.lineWidth=1; ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.arc(x+3,y+3,h-6,Math.PI/2,Math.PI); ctx.stroke();
+      ctx.setLineDash([]);
+    }
 
   } else if (def.shape==='rail') {
-    const bars=Math.max(2,Math.floor((w-8)/8));
-    const gap=(w-8)/(bars-1);
-    for (let i=0;i<bars;i++) { const bx=x+4+i*gap; ctx.beginPath(); ctx.moveTo(bx,y+3); ctx.lineTo(bx,y+h-3); ctx.stroke(); }
-    ctx.beginPath(); ctx.moveTo(x+4,y+3); ctx.lineTo(x+w-4,y+3); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(x+4,y+h-3); ctx.lineTo(x+w-4,y+h-3); ctx.stroke();
+    if (!rot) {
+      // Horizontal rail
+      const bars=Math.max(2,Math.floor((w-8)/8));
+      const gap=(w-8)/(bars-1);
+      for (let i=0;i<bars;i++) { const bx=x+4+i*gap; ctx.beginPath(); ctx.moveTo(bx,y+3); ctx.lineTo(bx,y+h-3); ctx.stroke(); }
+      ctx.beginPath(); ctx.moveTo(x+4,y+3); ctx.lineTo(x+w-4,y+3); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x+4,y+h-3); ctx.lineTo(x+w-4,y+h-3); ctx.stroke();
+    } else {
+      // Vertical rail
+      const bars=Math.max(2,Math.floor((h-8)/8));
+      const gap=(h-8)/(bars-1);
+      for (let i=0;i<bars;i++) { const by=y+4+i*gap; ctx.beginPath(); ctx.moveTo(x+3,by); ctx.lineTo(x+w-3,by); ctx.stroke(); }
+      ctx.beginPath(); ctx.moveTo(x+3,y+4); ctx.lineTo(x+3,y+h-4); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x+w-3,y+4); ctx.lineTo(x+w-3,y+h-4); ctx.stroke();
+    }
 
   } else if (def.shape==='radiator') {
-    const fins=Math.max(2,Math.floor((w-6)/6));
-    const gap=(w-6)/(fins-1);
-    for (let i=0;i<fins;i++) { const fx=x+3+i*gap; ctx.beginPath(); ctx.moveTo(fx,y+3); ctx.lineTo(fx,y+h-3); ctx.stroke(); }
-    ctx.beginPath(); ctx.rect(x+3,y+3,w-6,h-6); ctx.stroke();
+    if (!rot) {
+      const fins=Math.max(2,Math.floor((w-6)/6)); const gap=(w-6)/(fins-1);
+      for (let i=0;i<fins;i++) { const fx=x+3+i*gap; ctx.beginPath(); ctx.moveTo(fx,y+3); ctx.lineTo(fx,y+h-3); ctx.stroke(); }
+      ctx.beginPath(); ctx.rect(x+3,y+3,w-6,h-6); ctx.stroke();
+    } else {
+      const fins=Math.max(2,Math.floor((h-6)/6)); const gap=(h-6)/(fins-1);
+      for (let i=0;i<fins;i++) { const fy=y+3+i*gap; ctx.beginPath(); ctx.moveTo(x+3,fy); ctx.lineTo(x+w-3,fy); ctx.stroke(); }
+      ctx.beginPath(); ctx.rect(x+3,y+3,w-6,h-6); ctx.stroke();
+    }
 
   } else if (def.shape==='pipe') {
     ctx.beginPath(); ctx.arc(cx,cy,CELL/2-3,0,Math.PI*2); ctx.stroke();
@@ -654,19 +769,20 @@ function drawFixture(item, selected) {
     ctx.beginPath(); ctx.moveTo(cx,cy-5); ctx.lineTo(cx,cy+5); ctx.stroke();
 
   } else {
+    // Generic rect (storage)
     ctx.setLineDash([3,3]);
     ctx.beginPath(); ctx.moveTo(x+4,y+4); ctx.lineTo(x+w-4,y+h-4); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(x+w-4,y+4); ctx.lineTo(x+4,y+h-4); ctx.stroke();
     ctx.setLineDash([]);
   }
 
-  // label
+  // Label
   ctx.fillStyle='#e8eaf0';
-  ctx.font=`bold ${Math.min(10,Math.max(7,w/6))}px DM Sans, sans-serif`;
+  ctx.font=`bold ${Math.min(10,Math.max(7,Math.min(w,h)/4))}px DM Sans, sans-serif`;
   ctx.textAlign='center'; ctx.textBaseline='bottom';
   ctx.fillText(def.label, cx, y+h-2);
 
-  // resize handle when selected
+  // Resize handle (selected only)
   if (selected) {
     const {rx,ry}=resizeHandlePos(item);
     ctx.fillStyle='#fff'; ctx.strokeStyle='#4f8ef7'; ctx.lineWidth=1.5;
@@ -690,6 +806,7 @@ function drawNote(n) {
   ctx.fillText(n.text, x+13, y);
 }
 
+// ── EXPORT ──
 function exportPNG() {
   const jobId=document.getElementById('jobId').value.trim()||'job';
   const name=document.getElementById('customerName').value.trim()||'customer';
