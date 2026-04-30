@@ -226,7 +226,7 @@ canvas.width = COLS * CELL + 1;
 canvas.height = ROWS * CELL + 1;
 
 // Default sizes: 1 cell = 30cm
-// Rotation swaps w/h — shape drawing handles orientation via item.rotated flag
+// rotation: 0=0deg 1=90deg 2=180deg 3=270deg. Canvas transform handles all four.
 const FIXTURE_DEFS = {
   bath:      { w:6, h:2, label:'Bath',       color:'#4f8ef7', shape:'bath',
                hint:'Default 1800×600mm. Select then Rotate for end-wall fit.' },
@@ -330,12 +330,11 @@ function rotateSelected() {
   const it = safeItem();
   if (!it) return;
   saveHistory();
-  // Swap w and h, keep top-left in bounds
-  const newW = it.h, newH = it.w;
-  it.w = clamp(newW, 1, COLS - it.x);
-  it.h = clamp(newH, 1, ROWS - it.y);
-  // toggle rotation flag for shape drawing
-  it.rotated = !it.rotated;
+  it.rotation = ((it.rotation || 0) + 1) % 4;
+  // Swap w/h on every step so the bounding box tracks the shape
+  const tmp = it.w; it.w = it.h; it.h = tmp;
+  it.w = clamp(it.w, 1, COLS - it.x);
+  it.h = clamp(it.h, 1, ROWS - it.y);
   updateSelectedPanel();
   render();
 }
@@ -392,7 +391,7 @@ function onDown(e) {
       x: clamp(gx, room ? room.x : 0, room ? room.x + room.w - d.w : COLS - d.w),
       y: clamp(gy, room ? room.y : 0, room ? room.y + room.h - d.h : ROWS - d.h),
       w: d.w, h: d.h,
-      rotated: false
+      rotation: 0
     });
     render();
 
@@ -595,196 +594,162 @@ function drawDragPreview() {
 }
 
 function drawFixture(item, selected) {
-  const x=item.x*CELL, y=item.y*CELL, w=item.w*CELL, h=item.h*CELL;
+  const px=item.x*CELL, py=item.y*CELL, pw=item.w*CELL, ph=item.h*CELL;
   const def=FIXTURE_DEFS[item.type], col=def.color;
-  const cx=x+w/2, cy=y+h/2;
-  const rot = item.rotated || false;
+  const rotation = item.rotation || 0; // 0,1,2,3 = 0,90,180,270 deg
 
   ctx.save();
+
+  // Outer box (no rotation needed — it always fits the bounding box)
   ctx.fillStyle=col+'18';
   ctx.strokeStyle=selected?'#ffffff':col;
   ctx.lineWidth=selected?2:1.5;
-  ctx.beginPath(); ctx.roundRect(x+2,y+2,w-4,h-4,3); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.roundRect(px+2,py+2,pw-4,ph-4,3); ctx.fill(); ctx.stroke();
+
+  // Translate to centre, rotate, then draw shapes in "canonical" space
+  // Canonical = rotation 0: shape faces UP (back wall at top)
+  // We draw everything as if rotation=0, the canvas transform does the rest.
+  // At rotation 1 (90deg CW): back wall faces RIGHT
+  // At rotation 2 (180deg):   back wall faces DOWN
+  // At rotation 3 (270deg):   back wall faces LEFT
+  const cx=px+pw/2, cy=py+ph/2;
+  ctx.translate(cx, cy);
+  ctx.rotate(rotation * Math.PI / 2);
+
+  // In rotated space, "canonical" half-dimensions
+  // For 0/2 rotations pw=w, ph=h; for 1/3 rotations pw=h, ph=w (canvas handles this)
+  const hw = pw/2, hh = ph/2;
+  // After rotation, the canvas x-axis maps along the original axes.
+  // We just draw as if always facing "up" (back wall at -hh).
+  // Canonical coords: centre is 0,0; top=-hh, bottom=+hh, left=-hw, right=+hw
+
   ctx.strokeStyle=col; ctx.lineWidth=1.2;
 
-  // All shape drawing is done in the item's own coordinate space.
-  // For rotated items we render using the swapped w/h naturally —
-  // the shape functions are written to handle both orientations.
-
   if (def.shape==='bath') {
-    // Outer rim
-    ctx.beginPath(); ctx.ellipse(cx,cy,w/2-5,h/2-4,0,0,Math.PI*2); ctx.stroke();
-    // Inner bowl
+    ctx.beginPath(); ctx.ellipse(0,0,hw-5,hh-4,0,0,Math.PI*2); ctx.stroke();
     ctx.fillStyle=col+'25';
-    ctx.beginPath(); ctx.ellipse(cx,cy,w/2-9,h/2-7,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
-    // Taps (always on narrower end)
+    ctx.beginPath(); ctx.ellipse(0,0,hw-9,hh-7,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    // Taps at "top" (back wall = -hh), drain at "bottom"
     ctx.fillStyle=col;
-    if (!rot) {
-      ctx.beginPath(); ctx.arc(x+9,cy-5,2.5,0,Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(x+9,cy+5,2.5,0,Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(x+w-10,cy,3,0,Math.PI*2); ctx.stroke();
-    } else {
-      ctx.beginPath(); ctx.arc(cx-5,y+9,2.5,0,Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(cx+5,y+9,2.5,0,Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(cx,y+h-10,3,0,Math.PI*2); ctx.stroke();
-    }
+    ctx.beginPath(); ctx.arc(-5,-hh+9,2.5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc( 5,-hh+9,2.5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0,hh-10,3,0,Math.PI*2); ctx.stroke();
 
   } else if (def.shape==='shower') {
-    ctx.beginPath(); ctx.arc(cx,cy,5,0,Math.PI*2); ctx.stroke();
-    ctx.fillStyle=col; ctx.beginPath(); ctx.arc(cx,cy,2,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0,0,5,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle=col; ctx.beginPath(); ctx.arc(0,0,2,0,Math.PI*2); ctx.fill();
     ctx.setLineDash([3,5]); ctx.lineWidth=0.8;
-    ctx.beginPath(); ctx.moveTo(x+6,y+6); ctx.lineTo(x+w-6,y+h-6); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(x+w-6,y+6); ctx.lineTo(x+6,y+h-6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-hw+6,-hh+6); ctx.lineTo(hw-6,hh-6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(hw-6,-hh+6); ctx.lineTo(-hw+6,hh-6); ctx.stroke();
     ctx.setLineDash([]);
 
   } else if (def.shape==='wc') {
-    // Cistern at top (or left if rotated)
-    if (!rot) {
-      const cisH=h*0.32;
-      ctx.beginPath(); ctx.roundRect(x+4,y+2,w-8,cisH,2); ctx.stroke();
-      const bcy=y+cisH+(h-cisH)*0.5;
-      ctx.fillStyle=col+'28';
-      ctx.beginPath(); ctx.ellipse(cx,bcy,w/2-5,(h-cisH)/2-3,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
-    } else {
-      const cisW=w*0.32;
-      ctx.beginPath(); ctx.roundRect(x+2,y+4,cisW,h-8,2); ctx.stroke();
-      const bcx=x+cisW+(w-cisW)*0.5;
-      ctx.fillStyle=col+'28';
-      ctx.beginPath(); ctx.ellipse(bcx,cy,(w-cisW)/2-3,h/2-5,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
-    }
+    // Cistern at top, bowl below — all in canonical (centred) coords
+    const fullH = hh*2, cisH = fullH*0.32;
+    const cisTop = -hh+2;
+    ctx.beginPath(); ctx.roundRect(-hw+4, cisTop, (hw-4)*2, cisH, 2); ctx.stroke();
+    const bowlCy = cisTop + cisH + (fullH - cisH)*0.5 - hh;
+    const bowlRy = (fullH - cisH)*0.5 - 3;
+    ctx.fillStyle=col+'28';
+    ctx.beginPath(); ctx.ellipse(0, bowlCy, hw-5, Math.max(3,bowlRy), 0,0,Math.PI*2); ctx.fill(); ctx.stroke();
 
   } else if (def.shape==='basin') {
-    if (!rot) {
-      const m=3;
-      ctx.beginPath();
-      ctx.moveTo(x+m,y+m); ctx.lineTo(x+w-m,y+m);
-      ctx.lineTo(x+w-m,y+h*0.38);
-      ctx.quadraticCurveTo(x+w-m,y+h-m,cx,y+h-m);
-      ctx.quadraticCurveTo(x+m,y+h-m,x+m,y+h*0.38);
-      ctx.lineTo(x+m,y+m); ctx.closePath();
-      ctx.fillStyle=col+'28'; ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.ellipse(cx,y+m+5,w*0.12,2.5,0,0,Math.PI*2); ctx.stroke();
-      ctx.fillStyle=col; ctx.beginPath(); ctx.arc(cx,cy+5,2.5,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle=col+'aa';
-      ctx.beginPath(); ctx.arc(cx-8,y+m+3,2,0,Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(cx+8,y+m+3,2,0,Math.PI*2); ctx.fill();
-    } else {
-      // Rotated: back wall on left
-      const m=3;
-      ctx.beginPath();
-      ctx.moveTo(x+m,y+m); ctx.lineTo(x+m,y+h-m);
-      ctx.lineTo(x+w*0.38,y+h-m);
-      ctx.quadraticCurveTo(x+w-m,y+h-m,x+w-m,cy);
-      ctx.quadraticCurveTo(x+w-m,y+m,x+w*0.38,y+m);
-      ctx.lineTo(x+m,y+m); ctx.closePath();
-      ctx.fillStyle=col+'28'; ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.ellipse(x+m+5,cy,2.5,h*0.12,0,0,Math.PI*2); ctx.stroke();
-      ctx.fillStyle=col; ctx.beginPath(); ctx.arc(cx+5,cy,2.5,0,Math.PI*2); ctx.fill();
-    }
+    // Back wall at top (-hh), rounded front at bottom (+hh)
+    const m=3;
+    ctx.beginPath();
+    ctx.moveTo(-hw+m, -hh+m);
+    ctx.lineTo( hw-m, -hh+m);
+    ctx.lineTo( hw-m, -hh+hh*0.76);
+    ctx.quadraticCurveTo( hw-m, hh-m, 0, hh-m);
+    ctx.quadraticCurveTo(-hw+m, hh-m, -hw+m, -hh+hh*0.76);
+    ctx.lineTo(-hw+m, -hh+m);
+    ctx.closePath();
+    ctx.fillStyle=col+'28'; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0,-hh+m+5,hw*0.24,2.5,0,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle=col; ctx.beginPath(); ctx.arc(0,5,2.5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=col+'aa';
+    ctx.beginPath(); ctx.arc(-8,-hh+m+3,2,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc( 8,-hh+m+3,2,0,Math.PI*2); ctx.fill();
 
   } else if (def.shape==='furniture') {
-    // Vanity unit — rectangular with sink cutout and door lines
-    ctx.beginPath(); ctx.rect(x+3,y+3,w-6,h-6); ctx.stroke();
-    // Door gap lines
-    const doors = Math.max(1, Math.round((w-6)/40));
-    const doorW = (w-6)/doors;
-    for (let d=1; d<doors; d++) {
-      const lx = x+3+d*doorW;
-      ctx.beginPath(); ctx.moveTo(lx,y+3); ctx.lineTo(lx,y+h-3); ctx.stroke();
+    ctx.beginPath(); ctx.rect(-hw+3,-hh+3,(hw-3)*2,(hh-3)*2); ctx.stroke();
+    const doors=Math.max(1,Math.round((pw-6)/40));
+    const doorW=(pw-6)/doors;
+    for (let d=1;d<doors;d++) {
+      const lx=-hw+3+d*doorW;
+      ctx.beginPath(); ctx.moveTo(lx,-hh+3); ctx.lineTo(lx,hh-3); ctx.stroke();
     }
-    // Handles
-    for (let d=0; d<doors; d++) {
-      const hx = x+3+(d+0.5)*doorW;
-      ctx.fillStyle=col;
-      ctx.beginPath(); ctx.roundRect(hx-6,cy-2,12,4,2); ctx.fill();
+    ctx.fillStyle=col;
+    for (let d=0;d<doors;d++) {
+      const hx=-hw+3+(d+0.5)*doorW;
+      ctx.beginPath(); ctx.roundRect(hx-6,-2,12,4,2); ctx.fill();
     }
-    // Small sink circle top-right
-    ctx.beginPath(); ctx.arc(x+w-14,y+12,5,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(hw-14,-hh+12,5,0,Math.PI*2); ctx.stroke();
 
   } else if (def.shape==='window') {
-    if (!rot) {
-      ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(x+2,y+2); ctx.lineTo(x+w-2,y+2); ctx.stroke();
-      ctx.lineWidth=1;
-      ctx.beginPath(); ctx.moveTo(cx,y+2); ctx.lineTo(cx,y+h-2); ctx.stroke();
-      ctx.setLineDash([2,2]);
-      ctx.beginPath(); ctx.moveTo(x+4,y+h-4); ctx.lineTo(x+w-4,y+h-4); ctx.stroke();
-      ctx.setLineDash([]);
-    } else {
-      ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(x+2,y+2); ctx.lineTo(x+2,y+h-2); ctx.stroke();
-      ctx.lineWidth=1;
-      ctx.beginPath(); ctx.moveTo(x+2,cy); ctx.lineTo(x+w-2,cy); ctx.stroke();
-      ctx.setLineDash([2,2]);
-      ctx.beginPath(); ctx.moveTo(x+w-4,y+4); ctx.lineTo(x+w-4,y+h-4); ctx.stroke();
-      ctx.setLineDash([]);
-    }
+    // Back wall (mounting wall) at top
+    ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.moveTo(-hw+2,-hh+2); ctx.lineTo(hw-2,-hh+2); ctx.stroke();
+    ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,-hh+2); ctx.lineTo(0,hh-2); ctx.stroke();
+    ctx.setLineDash([2,2]);
+    ctx.beginPath(); ctx.moveTo(-hw+4,hh-4); ctx.lineTo(hw-4,hh-4); ctx.stroke();
+    ctx.setLineDash([]);
 
   } else if (def.shape==='door') {
-    if (!rot) {
-      ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x+3,y+3); ctx.lineTo(x+w-3,y+3); ctx.stroke();
-      ctx.lineWidth=1; ctx.setLineDash([3,3]);
-      ctx.beginPath(); ctx.arc(x+3,y+3,w-6,0,Math.PI/2); ctx.stroke();
-      ctx.setLineDash([]);
-    } else {
-      ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x+3,y+3); ctx.lineTo(x+3,y+h-3); ctx.stroke();
-      ctx.lineWidth=1; ctx.setLineDash([3,3]);
-      ctx.beginPath(); ctx.arc(x+3,y+3,h-6,Math.PI/2,Math.PI); ctx.stroke();
-      ctx.setLineDash([]);
-    }
+    // Hinge top-left, arc sweeps clockwise into room
+    ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(-hw+3,-hh+3); ctx.lineTo(hw-3,-hh+3); ctx.stroke();
+    ctx.lineWidth=1; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.arc(-hw+3,-hh+3,(pw-6),0,Math.PI/2); ctx.stroke();
+    ctx.setLineDash([]);
 
   } else if (def.shape==='rail') {
-    if (!rot) {
-      // Horizontal rail
-      const bars=Math.max(2,Math.floor((w-8)/8));
-      const gap=(w-8)/(bars-1);
-      for (let i=0;i<bars;i++) { const bx=x+4+i*gap; ctx.beginPath(); ctx.moveTo(bx,y+3); ctx.lineTo(bx,y+h-3); ctx.stroke(); }
-      ctx.beginPath(); ctx.moveTo(x+4,y+3); ctx.lineTo(x+w-4,y+3); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(x+4,y+h-3); ctx.lineTo(x+w-4,y+h-3); ctx.stroke();
-    } else {
-      // Vertical rail
-      const bars=Math.max(2,Math.floor((h-8)/8));
-      const gap=(h-8)/(bars-1);
-      for (let i=0;i<bars;i++) { const by=y+4+i*gap; ctx.beginPath(); ctx.moveTo(x+3,by); ctx.lineTo(x+w-3,by); ctx.stroke(); }
-      ctx.beginPath(); ctx.moveTo(x+3,y+4); ctx.lineTo(x+3,y+h-4); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(x+w-3,y+4); ctx.lineTo(x+w-3,y+h-4); ctx.stroke();
+    const bars=Math.max(2,Math.floor((pw-8)/8));
+    const gap=(pw-8)/(bars-1);
+    for (let i=0;i<bars;i++) {
+      const bx=-hw+4+i*gap;
+      ctx.beginPath(); ctx.moveTo(bx,-hh+3); ctx.lineTo(bx,hh-3); ctx.stroke();
     }
+    ctx.beginPath(); ctx.moveTo(-hw+4,-hh+3); ctx.lineTo(hw-4,-hh+3); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-hw+4,hh-3); ctx.lineTo(hw-4,hh-3); ctx.stroke();
 
   } else if (def.shape==='radiator') {
-    if (!rot) {
-      const fins=Math.max(2,Math.floor((w-6)/6)); const gap=(w-6)/(fins-1);
-      for (let i=0;i<fins;i++) { const fx=x+3+i*gap; ctx.beginPath(); ctx.moveTo(fx,y+3); ctx.lineTo(fx,y+h-3); ctx.stroke(); }
-      ctx.beginPath(); ctx.rect(x+3,y+3,w-6,h-6); ctx.stroke();
-    } else {
-      const fins=Math.max(2,Math.floor((h-6)/6)); const gap=(h-6)/(fins-1);
-      for (let i=0;i<fins;i++) { const fy=y+3+i*gap; ctx.beginPath(); ctx.moveTo(x+3,fy); ctx.lineTo(x+w-3,fy); ctx.stroke(); }
-      ctx.beginPath(); ctx.rect(x+3,y+3,w-6,h-6); ctx.stroke();
+    const fins=Math.max(2,Math.floor((pw-6)/6));
+    const gap=(pw-6)/(fins-1);
+    for (let i=0;i<fins;i++) {
+      const fx=-hw+3+i*gap;
+      ctx.beginPath(); ctx.moveTo(fx,-hh+3); ctx.lineTo(fx,hh-3); ctx.stroke();
     }
+    ctx.beginPath(); ctx.rect(-hw+3,-hh+3,(hw-3)*2,(hh-3)*2); ctx.stroke();
 
   } else if (def.shape==='pipe') {
-    ctx.beginPath(); ctx.arc(cx,cy,CELL/2-3,0,Math.PI*2); ctx.stroke();
-    ctx.fillStyle=col; ctx.beginPath(); ctx.arc(cx,cy,2.5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0,0,CELL/2-3,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle=col; ctx.beginPath(); ctx.arc(0,0,2.5,0,Math.PI*2); ctx.fill();
 
   } else if (def.shape==='drain') {
-    ctx.beginPath(); ctx.arc(cx,cy,CELL/2-3,0,Math.PI*2); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(cx-5,cy); ctx.lineTo(cx+5,cy); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(cx,cy-5); ctx.lineTo(cx,cy+5); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0,0,CELL/2-3,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-5,0); ctx.lineTo(5,0); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,-5); ctx.lineTo(0,5); ctx.stroke();
 
   } else {
-    // Generic rect (storage)
     ctx.setLineDash([3,3]);
-    ctx.beginPath(); ctx.moveTo(x+4,y+4); ctx.lineTo(x+w-4,y+h-4); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(x+w-4,y+4); ctx.lineTo(x+4,y+h-4); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-hw+4,-hh+4); ctx.lineTo(hw-4,hh-4); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(hw-4,-hh+4); ctx.lineTo(-hw+4,hh-4); ctx.stroke();
     ctx.setLineDash([]);
   }
 
-  // Label
+  // Label — unrotated so it's always readable
+  ctx.restore();
+  ctx.save();
   ctx.fillStyle='#e8eaf0';
-  ctx.font=`bold ${Math.min(10,Math.max(7,Math.min(w,h)/4))}px DM Sans, sans-serif`;
+  ctx.font=`bold ${Math.min(10,Math.max(7,Math.min(pw,ph)/4))}px DM Sans, sans-serif`;
   ctx.textAlign='center'; ctx.textBaseline='bottom';
-  ctx.fillText(def.label, cx, y+h-2);
+  ctx.fillText(def.label, cx, py+ph-2);
 
   // Resize handle (selected only)
   if (selected) {
-    const {rx,ry}=resizeHandlePos(item);
+    const rx=px+pw-1, ry=py+ph-1;
     ctx.fillStyle='#fff'; ctx.strokeStyle='#4f8ef7'; ctx.lineWidth=1.5;
     ctx.beginPath(); ctx.roundRect(rx-5,ry-5,10,10,2); ctx.fill(); ctx.stroke();
     ctx.fillStyle='#4f8ef7'; ctx.font='8px sans-serif';
@@ -794,6 +759,7 @@ function drawFixture(item, selected) {
 
   ctx.restore();
 }
+
 
 function drawNote(n) {
   const x=n.x*CELL+2, y=n.y*CELL+CELL/2;
