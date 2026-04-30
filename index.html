@@ -106,7 +106,7 @@
     <input type="text" id="customerName" placeholder="Customer name" maxlength="30">
   </div>
   <div style="display:flex;gap:6px;">
-    <button class="btn warn" onclick="redrawRoom()">↺ Redo Room</button>
+    <button class="btn warn" onclick="redrawRoom()">↺ Undo Last Room</button>
     <button class="btn danger" onclick="clearAll()">Clear All</button>
     <button class="btn primary" onclick="exportPNG()">💾 Save PNG</button>
   </div>
@@ -176,7 +176,7 @@
     </div>
 
     <div class="sidebar-section">
-      <div class="sidebar-label">Room size</div>
+      <div class="sidebar-label">Room size (total)</div>
       <div class="dim-display">
         <div class="dim-row"><span>Width</span><span id="dimW">—</span></div>
         <div class="dim-row"><span>Depth</span><span id="dimH">—</span></div>
@@ -189,8 +189,10 @@
       <div class="dim-display" style="font-size:11px;color:var(--text-dim);line-height:1.7;">
         1 cell = 30cm<br>
         Max grid = 9m × 9m<br>
-        Click item = select it<br>
-        R key = rotate selected
+        Draw multiple sections<br>
+        for L-shapes etc.<br>
+        Click item = select<br>
+        R = rotate
       </div>
     </div>
 
@@ -255,7 +257,7 @@ const FIXTURE_DEFS = {
 };
 
 let mode = 'room', placeType = null;
-let room = null, items = [], notes = [];
+let rooms = [], items = [], notes = [];
 let isDragging = false, isResizing = false;
 let dragStart = null, dragCurrent = null;
 let resizeStart = null, resizeItem = null;
@@ -265,7 +267,7 @@ let history = [];
 // ── HISTORY ──
 function saveHistory() {
   history.push({
-    room: room ? {...room} : null,
+    rooms: rooms.map(r => ({...r})),
     items: items.map(i => ({...i})),
     notes: notes.map(n => ({...n}))
   });
@@ -275,7 +277,7 @@ function saveHistory() {
 function undoLast() {
   if (!history.length) return;
   const p = history.pop();
-  room = p.room; items = p.items; notes = p.notes;
+  rooms = p.rooms; items = p.items; notes = p.notes;
   selectedIdx = null; isResizing = false; isDragging = false;
   resizeItem = null; resizeStart = null; dragStart = null;
   updateDims(); updateSelectedPanel(); render();
@@ -306,7 +308,7 @@ function setMode(m, type) {
   const btn = document.getElementById('tool-' + m);
   if (btn) btn.classList.add('active');
   const hints = {
-    room:   'Click and drag to draw the room. "Redo Room" redraws without losing fixtures.',
+    room:   'Drag to draw a room section. Draw multiple to make L-shapes. "Undo Last Room" removes the most recent section.',
     select: 'Click a fixture to select it. Drag to move. Rotate or resize in the panel.',
     erase:  'Click any fixture or note to remove it.',
     note:   'Click anywhere on the plan to add a text note.',
@@ -316,12 +318,18 @@ function setMode(m, type) {
   render();
 }
 
-function redrawRoom() { saveHistory(); room = null; updateDims(); setMode('room'); }
+function redrawRoom() {
+  if (!rooms.length) return;
+  saveHistory();
+  rooms.pop();
+  updateDims();
+  render();
+}
 
 function clearAll() {
   if (!confirm('Clear everything and start fresh?')) return;
   saveHistory();
-  room = null; items = []; notes = []; selectedIdx = null;
+  rooms = []; items = []; notes = []; selectedIdx = null;
   updateDims(); updateSelectedPanel(); render();
 }
 
@@ -375,10 +383,9 @@ function onDown(e) {
   const {gx, gy, px, py} = getPos(e);
 
   if (mode === 'room') {
-    saveHistory();
     isDragging = true;
     dragStart = {gx: clamp(gx,0,COLS-1), gy: clamp(gy,0,ROWS-1)};
-    dragCurrent = {...dragStart};
+    dragCurrent = {gx: clamp(gx,0,COLS-1), gy: clamp(gy,0,ROWS-1)};
 
   } else if (mode === 'place' && placeType) {
     // If clicking on an existing item, select it instead of placing a new one
@@ -394,8 +401,8 @@ function onDown(e) {
     const d = FIXTURE_DEFS[placeType];
     items.push({
       type: placeType,
-      x: clamp(gx, room ? room.x : 0, room ? room.x + room.w - d.w : COLS - d.w),
-      y: clamp(gy, room ? room.y : 0, room ? room.y + room.h - d.h : ROWS - d.h),
+      x: clamp(gx, 0, COLS - d.w),
+      y: clamp(gy, 0, ROWS - d.h),
       w: d.w, h: d.h,
       rotation: 0,
       baseW: d.w, baseH: d.h
@@ -463,8 +470,8 @@ function onMove(e) {
     const dx = gx - dragStart.gx, dy = gy - dragStart.gy;
     if (!dx && !dy) return;
     dragStart = {gx, gy};
-    it.x = clamp(it.x + dx, room ? room.x : 0, room ? room.x + room.w - it.w : COLS - it.w);
-    it.y = clamp(it.y + dy, room ? room.y : 0, room ? room.y + room.h - it.h : ROWS - it.h);
+    it.x = clamp(it.x + dx, 0, COLS - it.w);
+    it.y = clamp(it.y + dy, 0, ROWS - it.h);
     render();
   }
 }
@@ -475,7 +482,11 @@ function onUp(e) {
     const y1 = Math.min(dragStart.gy, dragCurrent.gy);
     const x2 = Math.max(dragStart.gx, dragCurrent.gx);
     const y2 = Math.max(dragStart.gy, dragCurrent.gy);
-    if (x2 > x1 && y2 > y1) { room = {x:x1, y:y1, w:x2-x1, h:y2-y1}; updateDims(); }
+    if (x2 > x1 && y2 > y1) {
+      saveHistory();
+      rooms.push({x:x1, y:y1, w:x2-x1, h:y2-y1});
+      updateDims();
+    }
   }
   isDragging = false; isResizing = false;
   dragStart = null; dragCurrent = null; resizeStart = null; resizeItem = null;
@@ -540,10 +551,22 @@ document.getElementById('noteInput').addEventListener('keydown', e => { if (e.ke
 
 // ── DIMENSIONS ──
 function updateDims() {
-  if (!room) { ['dimW','dimH','dimA'].forEach(id => document.getElementById(id).textContent = '—'); return; }
-  document.getElementById('dimW').textContent = (room.w * 0.3).toFixed(2) + 'm';
-  document.getElementById('dimH').textContent = (room.h * 0.3).toFixed(2) + 'm';
-  document.getElementById('dimA').textContent = (room.w * room.h * 0.09).toFixed(2) + 'm²';
+  if (!rooms.length) {
+    document.getElementById('dimW').textContent = '—';
+    document.getElementById('dimH').textContent = '—';
+    document.getElementById('dimA').textContent = '—';
+    return;
+  }
+  // Bounding box of all room sections
+  const minX = Math.min(...rooms.map(r => r.x));
+  const minY = Math.min(...rooms.map(r => r.y));
+  const maxX = Math.max(...rooms.map(r => r.x + r.w));
+  const maxY = Math.max(...rooms.map(r => r.y + r.h));
+  // Total area = sum of individual sections (may overlap slightly but good enough on site)
+  const totalArea = rooms.reduce((sum, r) => sum + r.w * r.h * 0.09, 0);
+  document.getElementById('dimW').textContent = ((maxX - minX) * 0.3).toFixed(2) + 'm';
+  document.getElementById('dimH').textContent = ((maxY - minY) * 0.3).toFixed(2) + 'm';
+  document.getElementById('dimA').textContent = totalArea.toFixed(2) + 'm²';
 }
 
 // ═══════════════════════════════
@@ -552,7 +575,7 @@ function updateDims() {
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawGrid();
-  if (room) drawRoom();
+  if (rooms.length) drawRoom();
   if (isDragging && dragStart && dragCurrent && mode === 'room') drawDragPreview();
   const validSel = (selectedIdx !== null && selectedIdx >= 0 && selectedIdx < items.length) ? selectedIdx : -1;
   items.forEach((item, i) => drawFixture(item, i === validSel));
@@ -585,18 +608,29 @@ function drawGrid() {
 }
 
 function drawRoom() {
-  const {x, y, w, h} = room;
-  const px=x*CELL, py=y*CELL, pw=w*CELL, ph=h*CELL;
-  ctx.fillStyle = 'rgba(79,142,247,0.05)'; ctx.fillRect(px,py,pw,ph);
-  ctx.strokeStyle = '#4f8ef7'; ctx.lineWidth = 2.5;
-  ctx.strokeRect(px+1, py+1, pw-2, ph-2);
-  // White dimension labels on room outline
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 12px DM Sans, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText((w*0.3).toFixed(2)+'m', px+pw/2, py-5);
-  ctx.save(); ctx.translate(px-7, py+ph/2); ctx.rotate(-Math.PI/2);
-  ctx.fillText((h*0.3).toFixed(2)+'m', 0, 0); ctx.restore();
+  rooms.forEach((room, idx) => {
+    const {x, y, w, h} = room;
+    const px=x*CELL, py=y*CELL, pw=w*CELL, ph=h*CELL;
+    ctx.fillStyle = 'rgba(79,142,247,0.05)'; ctx.fillRect(px,py,pw,ph);
+    ctx.strokeStyle = '#4f8ef7'; ctx.lineWidth = 2.5;
+    ctx.strokeRect(px+1, py+1, pw-2, ph-2);
+    // Dimension labels on each section
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 11px DM Sans, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText((w*0.3).toFixed(2)+'m', px+pw/2, py-4);
+    ctx.save(); ctx.translate(px-7, py+ph/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText((h*0.3).toFixed(2)+'m', 0, 0); ctx.restore();
+    // Section number badge for multi-section rooms
+    if (rooms.length > 1) {
+      ctx.fillStyle = 'rgba(79,142,247,0.7)';
+      ctx.beginPath(); ctx.arc(px+pw-10, py+10, 8, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 9px DM Sans, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(idx+1, px+pw-10, py+10);
+      ctx.textBaseline = 'alphabetic';
+    }
+  });
 }
 
 function drawDragPreview() {
@@ -814,7 +848,3 @@ function exportPNG() {
   link.click();
 }
 
-render();
-</script>
-</body>
-</html>
