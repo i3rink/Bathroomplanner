@@ -1021,7 +1021,10 @@ function exportPDF() {
   const cropW = (maxX - minX) * CELL, cropH = (maxY - minY) * CELL;
   const crop = document.createElement('canvas');
   crop.width = cropW; crop.height = cropH;
-  crop.getContext('2d').drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+  const cc = crop.getContext('2d');
+  cc.fillStyle = '#0f1117';
+  cc.fillRect(0, 0, cropW, cropH);
+  cc.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
   const imgData = crop.toDataURL('image/png');
 
   const win = window.open('', '_blank');
