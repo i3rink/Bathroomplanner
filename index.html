@@ -322,7 +322,7 @@
 const COLS = 40, ROWS = 40, CELL = 16;
 const MM_PER_CELL = 100; // 1 cell = 100mm
 const canvas = document.getElementById('mainCanvas');
-const ctx = canvas.getContext('2d');
+let ctx = canvas.getContext('2d');
 canvas.width = COLS * CELL + 1;
 canvas.height = ROWS * CELL + 1;
 
@@ -1017,12 +1017,26 @@ function exportPDF() {
   minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
   maxX = Math.min(COLS, maxX + pad); maxY = Math.min(ROWS, maxY + pad);
 
-  // Crop to just the used area — canvas now has opaque dark background
+  // Create export canvas, swap ctx, re-render everything fresh, then crop
   const cropX = minX * CELL, cropY = minY * CELL;
   const cropW = (maxX - minX) * CELL, cropH = (maxY - minY) * CELL;
+
+  // Full-size offscreen canvas
+  const offscreen = document.createElement('canvas');
+  offscreen.width = canvas.width;
+  offscreen.height = canvas.height;
+  const offCtx = offscreen.getContext('2d');
+
+  // Swap global ctx to offscreen and re-render
+  const savedCtx = ctx;
+  ctx = offCtx;
+  render();
+  ctx = savedCtx;
+
+  // Crop to drawn area
   const crop = document.createElement('canvas');
   crop.width = cropW; crop.height = cropH;
-  crop.getContext('2d').drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+  crop.getContext('2d').drawImage(offscreen, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
   const imgData = crop.toDataURL('image/png');
 
   const win = window.open('', '_blank');
@@ -1125,6 +1139,14 @@ function exportPNG() {
   const jobId=document.getElementById('jobId').value.trim()||'job';
   const name=document.getElementById('customerName').value.trim()||'customer';
   const hh=64;
+  // Re-render to offscreen so PNG has guaranteed dark background
+  const offPng = document.createElement('canvas');
+  offPng.width = canvas.width; offPng.height = canvas.height;
+  const savedCtxPng = ctx;
+  ctx = offPng.getContext('2d');
+  render();
+  ctx = savedCtxPng;
+
   const exp=document.createElement('canvas');
   exp.width=canvas.width; exp.height=canvas.height+hh;
   const ec=exp.getContext('2d');
@@ -1136,8 +1158,7 @@ function exportPNG() {
   ec.fillText(`Job: ${jobId}   Customer: ${name}   Date: ${new Date().toLocaleDateString('en-GB')}`, 14, 34);
   ec.strokeStyle='#2e3248'; ec.lineWidth=1;
   ec.beginPath(); ec.moveTo(0,hh); ec.lineTo(exp.width,hh); ec.stroke();
-  ec.fillStyle='#0f1117'; ec.fillRect(0,hh,canvas.width,canvas.height);
-  ec.drawImage(canvas,0,hh);
+  ec.drawImage(offPng,0,hh);
   const link=document.createElement('a');
   link.download=`survey_${jobId}_${name.replace(/\s+/g,'_')}.png`;
   link.href=exp.toDataURL('image/png');
