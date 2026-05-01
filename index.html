@@ -400,6 +400,7 @@ function setMode(m, type) {
     place:  type ? `Placing ${FIXTURE_DEFS[type].label}. Click an empty area to place, or click an existing item to select it instead.` : '',
   };
   document.getElementById('hintText').textContent = hints[m] || '';
+  if (window.innerWidth <= 900) closeSidebar();
   render();
 }
 
@@ -957,13 +958,7 @@ function closeSidebar() {
   document.getElementById('sidebarBackdrop').classList.remove('open');
 }
 
-// Auto-close sidebar after picking a tool on tablet
-// On tablet, auto-close sidebar after picking a tool
-const _setModeBase = setMode;
-setMode = function(m, type) {
-  _setModeBase(m, type);
-  if (window.innerWidth <= 900) closeSidebar();
-};
+// Sidebar auto-close handled inside setMode
 
 render();
 </script>
