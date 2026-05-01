@@ -470,8 +470,8 @@ function onDown(e) {
 
   if (mode === 'room') {
     isDragging = true;
-    dragStart = {gx: clamp(gx,3,COLS-1-3), gy: clamp(gy,3,ROWS-1-3)};
-    dragCurrent = {gx: clamp(gx,3,COLS-1-3), gy: clamp(gy,3,ROWS-1-3)};
+    dragStart = {gx: clamp(gx,0,COLS-1), gy: clamp(gy,0,ROWS-1)};
+    dragCurrent = {gx: clamp(gx,0,COLS-1), gy: clamp(gy,0,ROWS-1)};
 
   } else if (mode === 'place' && placeType) {
     // If clicking on an existing item, select it instead of placing a new one
@@ -487,8 +487,8 @@ function onDown(e) {
     const d = FIXTURE_DEFS[placeType];
     items.push({
       type: placeType,
-      x: clamp(gx, 3, COLS - d.w - 3),
-      y: clamp(gy, 3, ROWS - d.h - 3),
+      x: clamp(gx, 0, COLS - d.w),
+      y: clamp(gy, 0, ROWS - d.h),
       w: d.w, h: d.h,
       rotation: 0,
       baseW: d.w, baseH: d.h
@@ -535,7 +535,7 @@ function onMove(e) {
   }
 
   if (mode === 'room' && isDragging) {
-    dragCurrent = {gx: clamp(gx,3,COLS-1-3), gy: clamp(gy,3,ROWS-1-3)};
+    dragCurrent = {gx: clamp(gx,0,COLS-1), gy: clamp(gy,0,ROWS-1)};
     render();
   } else if (isResizing && resizeItem && resizeStart) {
     resizeItem.w = clamp(resizeStart.origW + (gx - resizeStart.gx), 1, COLS - resizeItem.x);
@@ -556,8 +556,8 @@ function onMove(e) {
     const dx = gx - dragStart.gx, dy = gy - dragStart.gy;
     if (!dx && !dy) return;
     dragStart = {gx, gy};
-    it.x = clamp(it.x + dx, 3, COLS - it.w - 3);
-    it.y = clamp(it.y + dy, 3, ROWS - it.h - 3);
+    it.x = clamp(it.x + dx, 0, COLS - it.w);
+    it.y = clamp(it.y + dy, 0, ROWS - it.h);
     render();
   }
 }
@@ -958,11 +958,12 @@ function closeSidebar() {
 }
 
 // Auto-close sidebar after picking a tool on tablet
-const origSetMode = setMode;
-function setMode(m, type) {
-  origSetMode(m, type);
+// On tablet, auto-close sidebar after picking a tool
+const _setModeBase = setMode;
+setMode = function(m, type) {
+  _setModeBase(m, type);
   if (window.innerWidth <= 900) closeSidebar();
-}
+};
 
 render();
 </script>
