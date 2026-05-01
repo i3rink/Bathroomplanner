@@ -677,7 +677,8 @@ function updateDims() {
 // RENDER
 // ═══════════════════════════════
 function render() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#0f1117';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
   updateFixtureList();
   drawGrid();
   if (rooms.length) drawRoom();
@@ -1016,15 +1017,12 @@ function exportPDF() {
   minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
   maxX = Math.min(COLS, maxX + pad); maxY = Math.min(ROWS, maxY + pad);
 
-  // Crop to just the used area
+  // Crop to just the used area — canvas now has opaque dark background
   const cropX = minX * CELL, cropY = minY * CELL;
   const cropW = (maxX - minX) * CELL, cropH = (maxY - minY) * CELL;
   const crop = document.createElement('canvas');
   crop.width = cropW; crop.height = cropH;
-  const cc = crop.getContext('2d');
-  cc.fillStyle = '#0f1117';
-  cc.fillRect(0, 0, cropW, cropH);
-  cc.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+  crop.getContext('2d').drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
   const imgData = crop.toDataURL('image/png');
 
   const win = window.open('', '_blank');
