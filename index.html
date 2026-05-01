@@ -238,24 +238,24 @@
     <div class="sidebar-section">
       <div class="sidebar-label">Sanitaryware</div>
       <div class="tool-grid">
-        <button class="tool-btn" onclick="setMode('place','bath')"><span class="icon">🛁</span>Bath</button>
-        <button class="tool-btn" onclick="setMode('place','shower')"><span class="icon">🚿</span>Shower</button>
-        <button class="tool-btn" onclick="setMode('place','wc')"><span class="icon">🚽</span>WC</button>
-        <button class="tool-btn" onclick="setMode('place','basin')"><span class="icon">🚰</span>Basin</button>
-        <button class="tool-btn" onclick="setMode('place','furniture')"><span class="icon">🪞</span>Furniture</button>
-        <button class="tool-btn" onclick="setMode('place','storage')"><span class="icon">🗄</span>Storage</button>
+        <button class="tool-btn" id="tool-place-bath" onclick="setMode('place','bath')"><span class="icon">🛁</span>Bath</button>
+        <button class="tool-btn" id="tool-place-shower" onclick="setMode('place','shower')"><span class="icon">🚿</span>Shower</button>
+        <button class="tool-btn" id="tool-place-wc" onclick="setMode('place','wc')"><span class="icon">🚽</span>WC</button>
+        <button class="tool-btn" id="tool-place-basin" onclick="setMode('place','basin')"><span class="icon">🚰</span>Basin</button>
+        <button class="tool-btn" id="tool-place-furniture" onclick="setMode('place','furniture')"><span class="icon">🪞</span>Furniture</button>
+        <button class="tool-btn" id="tool-place-storage" onclick="setMode('place','storage')"><span class="icon">🗄</span>Storage</button>
       </div>
     </div>
 
     <div class="sidebar-section">
       <div class="sidebar-label">Features</div>
       <div class="tool-grid">
-        <button class="tool-btn" onclick="setMode('place','window')"><span class="icon">🪟</span>Window</button>
-        <button class="tool-btn" onclick="setMode('place','door')"><span class="icon">🚪</span>Door</button>
-        <button class="tool-btn" onclick="setMode('place','towelrail')"><span class="icon">♨️</span>Towel Rail</button>
-        <button class="tool-btn" onclick="setMode('place','radiator')"><span class="icon">🌡</span>Radiator</button>
-        <button class="tool-btn" onclick="setMode('place','pipe')"><span class="icon">⚙️</span>Pipework</button>
-        <button class="tool-btn" onclick="setMode('place','drain')"><span class="icon">🔵</span>Drain</button>
+        <button class="tool-btn" id="tool-place-window" onclick="setMode('place','window')"><span class="icon">🪟</span>Window</button>
+        <button class="tool-btn" id="tool-place-door" onclick="setMode('place','door')"><span class="icon">🚪</span>Door</button>
+        <button class="tool-btn" id="tool-place-towelrail" onclick="setMode('place','towelrail')"><span class="icon">♨️</span>Towel Rail</button>
+        <button class="tool-btn" id="tool-place-radiator" onclick="setMode('place','radiator')"><span class="icon">🌡</span>Radiator</button>
+        <button class="tool-btn" id="tool-place-pipe" onclick="setMode('place','pipe')"><span class="icon">⚙️</span>Pipework</button>
+        <button class="tool-btn" id="tool-place-drain" onclick="setMode('place','drain')"><span class="icon">🔵</span>Drain</button>
       </div>
     </div>
 
@@ -390,7 +390,8 @@ function setMode(m, type) {
   mode = m; placeType = type || null;
   if (m !== 'select') { selectedIdx = null; updateSelectedPanel(); }
   document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-  const btn = document.getElementById('tool-' + m);
+  const btnId = m === 'place' ? 'tool-place-' + type : 'tool-' + m;
+  const btn = document.getElementById(btnId);
   if (btn) btn.classList.add('active');
   const hints = {
     room:   'Drag to draw a room section. Draw multiple to make L-shapes. "Undo Last Room" removes the most recent section.',
