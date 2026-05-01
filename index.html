@@ -51,7 +51,7 @@
     align-items: center; gap: 4px; transition: all 0.15s; text-align: center; line-height: 1.2; }
   .tool-btn .icon { font-size: 18px; }
   .tool-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .tool-btn.active { background: rgba(79,142,247,0.15); border-color: var(--accent); color: var(--accent); }
+  .tool-btn.active { background: rgba(79,142,247,0.25); border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; font-weight: 600; }
 
   .dim-display { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px;
     padding: 8px 10px; font-family: 'DM Mono', monospace; font-size: 12px; }
@@ -202,7 +202,7 @@
     <div class="sidebar-section">
       <div class="sidebar-label">Mode</div>
       <div class="tool-grid">
-        <button class="tool-btn active" id="tool-room" onclick="setMode('room')">
+        <button class="tool-btn" id="tool-room" onclick="setMode('room')">
           <span class="icon">⬜</span>Room
         </button>
         <button class="tool-btn" id="tool-select" onclick="setMode('select')">
@@ -961,6 +961,8 @@ function closeSidebar() {
 
 // Sidebar auto-close handled inside setMode
 
+// Set initial active state properly
+document.getElementById('tool-room').classList.add('active');
 render();
 </script>
 </body>
