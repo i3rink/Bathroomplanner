@@ -95,11 +95,90 @@
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── TABLET RESPONSIVE ── */
+
+  /* Hamburger toggle button — hidden on desktop */
+  .sidebar-toggle {
+    display: none;
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-size: 20px; width: 40px; height: 40px;
+    align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+  }
+
+  /* Portrait warning overlay */
+  .portrait-warning {
+    display: none; position: fixed; inset: 0; background: var(--bg);
+    flex-direction: column; align-items: center; justify-content: center;
+    z-index: 999; text-align: center; padding: 40px; gap: 16px;
+  }
+  .portrait-warning .pw-icon { font-size: 48px; }
+  .portrait-warning p { font-size: 16px; color: var(--text-dim); max-width: 260px; line-height: 1.5; }
+
+  @media (max-width: 900px) {
+    /* Show hamburger, hide job info text in header to save space */
+    .sidebar-toggle { display: flex; }
+
+    /* Header compact */
+    header { padding: 8px 12px; }
+    .logo { font-size: 11px; }
+    .job-info input { width: 100px; font-size: 12px; padding: 4px 8px; }
+    .btn { padding: 6px 10px; font-size: 11px; }
+
+    /* Sidebar becomes a slide-out drawer */
+    .sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: 220px; z-index: 200;
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+      box-shadow: 4px 0 24px rgba(0,0,0,0.5);
+    }
+    .sidebar.open { transform: translateX(0); }
+
+    /* Drawer overlay backdrop */
+    .sidebar-backdrop {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 199;
+    }
+    .sidebar-backdrop.open { display: block; }
+
+    /* Bigger touch targets for tool buttons */
+    .tool-btn { padding: 12px 4px 10px; font-size: 12px; min-height: 56px; }
+    .tool-btn .icon { font-size: 22px; }
+
+    /* Bigger action buttons in sidebar */
+    .btn.rotate-btn { padding: 10px; font-size: 12px; }
+    .selected-panel .btn.danger { padding: 10px; font-size: 12px; }
+
+    /* Bottom bar — just show undo, no hint text */
+    .bottom-bar .hint { display: none; }
+    .bottom-bar { padding: 6px 12px; justify-content: flex-end; }
+
+    /* Canvas: full width since sidebar is hidden */
+    .canvas-wrap { width: 100%; }
+  }
+
+  @media (max-width: 900px) and (orientation: portrait) {
+    .portrait-warning { display: flex; }
+  }
+
+  @media (min-width: 901px) {
+    /* Desktop: sidebar always visible, no toggle needed */
+    .sidebar { transform: none !important; position: relative; }
+    .sidebar-backdrop { display: none !important; }
+  }
 </style>
 </head>
 <body>
 
+<div class="portrait-warning">
+  <div class="pw-icon">🔄</div>
+  <p>Please rotate your tablet to landscape mode to use the survey tool.</p>
+</div>
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+
 <header>
+  <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Menu">☰</button>
   <div class="logo">ANNICK // SURVEY</div>
   <div class="job-info">
     <input type="text" id="jobId" placeholder="Job ID" maxlength="20">
@@ -113,7 +192,12 @@
 </header>
 
 <div class="workspace">
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
+    <!-- Close button — tablet only -->
+    <div style="display:flex;justify-content:flex-end;padding:10px 10px 0;">
+      <button class="btn" id="sidebarClose" onclick="closeSidebar()" style="font-size:18px;padding:4px 10px;">✕</button>
+    </div>
+    <style>#sidebarClose{display:none;}@media(max-width:900px){#sidebarClose{display:block;}}</style>
 
     <div class="sidebar-section">
       <div class="sidebar-label">Mode</div>
@@ -138,15 +222,15 @@
       <div class="panel-title" id="selectedTitle">Selected</div>
       <div class="size-row">
         <label>W</label>
-        <input type="number" id="sizeW" min="1" max="30" step="1" oninput="resizeSelected()">
-        <span>cells</span>
+        <input type="number" id="sizeW" min="100" max="5000" step="100" oninput="resizeSelected()">
+        <span>mm</span>
       </div>
       <div class="size-row">
         <label>H</label>
-        <input type="number" id="sizeH" min="1" max="30" step="1" oninput="resizeSelected()">
-        <span>cells</span>
+        <input type="number" id="sizeH" min="100" max="5000" step="100" oninput="resizeSelected()">
+        <span>mm</span>
       </div>
-      <div class="size-hint" id="sizeHint"></div>
+      <div class="size-hint" id="sizeHint" style="display:none"></div>
       <button class="btn rotate-btn" onclick="rotateSelected()">↻ Rotate 90°</button>
       <button class="btn danger" style="width:100%;margin-top:6px;font-size:11px;" onclick="deleteSelected()">Delete fixture</button>
     </div>
@@ -187,8 +271,8 @@
     <div class="sidebar-section">
       <div class="sidebar-label">Grid key</div>
       <div class="dim-display" style="font-size:11px;color:var(--text-dim);line-height:1.7;">
-        1 cell = 30cm<br>
-        Max grid = 9m × 9m<br>
+        1 cell = 100mm<br>
+        Max grid = 4m × 4m<br>
         Draw multiple sections<br>
         for L-shapes etc.<br>
         Click item = select<br>
@@ -221,7 +305,8 @@
 </div>
 
 <script>
-const COLS = 30, ROWS = 30, CELL = 22;
+const COLS = 40, ROWS = 40, CELL = 16;
+const MM_PER_CELL = 100; // 1 cell = 100mm
 const canvas = document.getElementById('mainCanvas');
 const ctx = canvas.getContext('2d');
 canvas.width = COLS * CELL + 1;
@@ -230,29 +315,29 @@ canvas.height = ROWS * CELL + 1;
 // Default sizes: 1 cell = 30cm
 // rotation: 0=0deg 1=90deg 2=180deg 3=270deg. Canvas transform handles all four.
 const FIXTURE_DEFS = {
-  bath:      { w:6, h:2, label:'Bath',       color:'#4f8ef7', shape:'bath',
+  bath:      { w:18, h:6, label:'Bath',       color:'#4f8ef7', shape:'bath',
                hint:'Default 1800×600mm. Select then Rotate for end-wall fit.' },
-  shower:    { w:3, h:3, label:'Shower',     color:'#a0c4ff', shape:'shower',
+  shower:    { w:9, h:9, label:'Shower',     color:'#a0c4ff', shape:'shower',
                hint:'Default 900×900mm. Resize for 1200×900 etc.' },
-  wc:        { w:2, h:2, label:'WC',         color:'#f7c94f', shape:'wc',
+  wc:        { w:4, h:6, label:'WC',         color:'#f7c94f', shape:'wc',
                hint:'Default 600×600mm. Rotate to face any wall.' },
-  basin:     { w:2, h:2, label:'Basin',      color:'#4ff7c9', shape:'basin',
+  basin:     { w:6, h:5, label:'Basin',      color:'#4ff7c9', shape:'basin',
                hint:'Default 600×600mm. Rotate to mount on any wall.' },
-  furniture: { w:4, h:2, label:'Furniture',  color:'#b07fff', shape:'furniture',
+  furniture: { w:12, h:6, label:'Furniture',  color:'#b07fff', shape:'furniture',
                hint:'Vanity unit / fitted furniture. Resize to match.' },
-  storage:   { w:3, h:2, label:'Storage',    color:'#8a8a8a', shape:'rect',
+  storage:   { w:9, h:6, label:'Storage',    color:'#8a8a8a', shape:'rect',
                hint:'Freestanding storage. Adjust to match dimensions.' },
-  window:    { w:3, h:1, label:'Window',     color:'#a0e0ff', shape:'window',
+  window:    { w:9, h:2, label:'Window',     color:'#a0e0ff', shape:'window',
                hint:'Rotate to place on side walls.' },
-  door:      { w:2, h:2, label:'Door',       color:'#f7a04f', shape:'door',
+  door:      { w:7, h:7, label:'Door',       color:'#f7a04f', shape:'door',
                hint:'Rotate to change which wall and swing direction.' },
-  towelrail: { w:3, h:1, label:'Towel Rail', color:'#f74f8e', shape:'rail',
+  towelrail: { w:12, h:2, label:'Towel Rail', color:'#f74f8e', shape:'rail',
                hint:'Default horizontal. Rotate to place vertically.' },
-  radiator:  { w:3, h:1, label:'Radiator',   color:'#f76a4f', shape:'radiator',
+  radiator:  { w:12, h:2, label:'Radiator',   color:'#f76a4f', shape:'radiator',
                hint:'Default horizontal. Rotate to place vertically.' },
-  pipe:      { w:1, h:1, label:'Pipe',       color:'#aaa',    shape:'pipe',
+  pipe:      { w:2, h:2, label:'Pipe',       color:'#aaa',    shape:'pipe',
                hint:'One cell = pipe or soil stack location.' },
-  drain:     { w:1, h:1, label:'Drain',      color:'#7b82a0', shape:'drain',
+  drain:     { w:2, h:2, label:'Drain',      color:'#7b82a0', shape:'drain',
                hint:'One cell = floor drain or waste point.' },
 };
 
@@ -368,7 +453,8 @@ function resizeHandlePos(item) {
 }
 function onResizeHandle(px, py, item) {
   const { rx, ry } = resizeHandlePos(item);
-  return Math.abs(px - rx) < 11 && Math.abs(py - ry) < 11;
+  const zone = window.innerWidth <= 900 ? 18 : 11;
+  return Math.abs(px - rx) < zone && Math.abs(py - ry) < zone;
 }
 
 // ── EVENTS ──
@@ -384,8 +470,8 @@ function onDown(e) {
 
   if (mode === 'room') {
     isDragging = true;
-    dragStart = {gx: clamp(gx,0,COLS-1), gy: clamp(gy,0,ROWS-1)};
-    dragCurrent = {gx: clamp(gx,0,COLS-1), gy: clamp(gy,0,ROWS-1)};
+    dragStart = {gx: clamp(gx,3,COLS-1-3), gy: clamp(gy,3,ROWS-1-3)};
+    dragCurrent = {gx: clamp(gx,3,COLS-1-3), gy: clamp(gy,3,ROWS-1-3)};
 
   } else if (mode === 'place' && placeType) {
     // If clicking on an existing item, select it instead of placing a new one
@@ -401,8 +487,8 @@ function onDown(e) {
     const d = FIXTURE_DEFS[placeType];
     items.push({
       type: placeType,
-      x: clamp(gx, 0, COLS - d.w),
-      y: clamp(gy, 0, ROWS - d.h),
+      x: clamp(gx, 3, COLS - d.w - 3),
+      y: clamp(gy, 3, ROWS - d.h - 3),
       w: d.w, h: d.h,
       rotation: 0,
       baseW: d.w, baseH: d.h
@@ -449,7 +535,7 @@ function onMove(e) {
   }
 
   if (mode === 'room' && isDragging) {
-    dragCurrent = {gx: clamp(gx,0,COLS-1), gy: clamp(gy,0,ROWS-1)};
+    dragCurrent = {gx: clamp(gx,3,COLS-1-3), gy: clamp(gy,3,ROWS-1-3)};
     render();
   } else if (isResizing && resizeItem && resizeStart) {
     resizeItem.w = clamp(resizeStart.origW + (gx - resizeStart.gx), 1, COLS - resizeItem.x);
@@ -470,8 +556,8 @@ function onMove(e) {
     const dx = gx - dragStart.gx, dy = gy - dragStart.gy;
     if (!dx && !dy) return;
     dragStart = {gx, gy};
-    it.x = clamp(it.x + dx, 0, COLS - it.w);
-    it.y = clamp(it.y + dy, 0, ROWS - it.h);
+    it.x = clamp(it.x + dx, 3, COLS - it.w - 3);
+    it.y = clamp(it.y + dy, 3, ROWS - it.h - 3);
     render();
   }
 }
@@ -517,20 +603,21 @@ function updateSelectedPanel() {
   const def = FIXTURE_DEFS[it.type];
   panel.classList.add('visible');
   document.getElementById('selectedTitle').textContent = def.label;
-  document.getElementById('sizeW').value = it.w;
-  document.getElementById('sizeH').value = it.h;
-  document.getElementById('sizeHint').textContent = `${it.w*300}mm × ${it.h*300}mm`;
-  document.getElementById('hintText').textContent = def.hint;
+  document.getElementById('sizeW').value = it.w * 100;
+  document.getElementById('sizeH').value = it.h * 100;
+  document.getElementById('sizeHint').textContent = '';
+  document.getElementById('hintText').textContent = def.hint || '';
 }
 
 function resizeSelected() {
   const it = safeItem(); if (!it) return;
-  it.w = clamp(parseInt(document.getElementById('sizeW').value)||1, 1, COLS - it.x);
-  it.h = clamp(parseInt(document.getElementById('sizeH').value)||1, 1, ROWS - it.y);
-  // Keep base dimensions aligned with current rotation so rotate still works
+  const mmW = parseInt(document.getElementById('sizeW').value) || 100;
+  const mmH = parseInt(document.getElementById('sizeH').value) || 100;
+  it.w = clamp(Math.round(mmW / 100), 1, COLS - it.x);
+  it.h = clamp(Math.round(mmH / 100), 1, ROWS - it.y);
+  // Keep base dimensions aligned with current rotation
   if ((it.rotation || 0) % 2 === 0) { it.baseW = it.w; it.baseH = it.h; }
   else { it.baseW = it.h; it.baseH = it.w; }
-  document.getElementById('sizeHint').textContent = `${it.w*300}mm × ${it.h*300}mm`;
   render();
 }
 
@@ -563,10 +650,11 @@ function updateDims() {
   const maxX = Math.max(...rooms.map(r => r.x + r.w));
   const maxY = Math.max(...rooms.map(r => r.y + r.h));
   // Total area = sum of individual sections (may overlap slightly but good enough on site)
-  const totalArea = rooms.reduce((sum, r) => sum + r.w * r.h * 0.09, 0);
-  document.getElementById('dimW').textContent = ((maxX - minX) * 0.3).toFixed(2) + 'm';
-  document.getElementById('dimH').textContent = ((maxY - minY) * 0.3).toFixed(2) + 'm';
-  document.getElementById('dimA').textContent = totalArea.toFixed(2) + 'm²';
+  const totalArea = rooms.reduce((sum, r) => sum + r.w * r.h * 0.01, 0);
+  document.getElementById('dimW').textContent = ((maxX - minX) * 100).toFixed(0) + 'mm';
+  document.getElementById('dimH').textContent = ((maxY - minY) * 100).toFixed(0) + 'mm';
+  const areaM2 = rooms.reduce((sum, r) => sum + r.w * r.h * 0.01, 0);
+  document.getElementById('dimA').textContent = areaM2.toFixed(2) + 'm²';
 }
 
 // ═══════════════════════════════
@@ -586,25 +674,29 @@ function drawGrid() {
   // Fine grid lines
   for (let c = 0; c <= COLS; c++) {
     ctx.beginPath(); ctx.moveTo(c*CELL+0.5, 0); ctx.lineTo(c*CELL+0.5, ROWS*CELL);
-    ctx.strokeStyle = c%5===0 ? '#3a4060' : '#242840';
-    ctx.lineWidth = c%5===0 ? 1 : 0.5; ctx.stroke();
+    ctx.strokeStyle = c%10===0 ? '#3a4060' : (c%5===0 ? '#272b40' : '#1e2235');
+    ctx.lineWidth = c%10===0 ? 1 : 0.5; ctx.stroke();
   }
   for (let r = 0; r <= ROWS; r++) {
     ctx.beginPath(); ctx.moveTo(0, r*CELL+0.5); ctx.lineTo(COLS*CELL, r*CELL+0.5);
-    ctx.strokeStyle = r%5===0 ? '#3a4060' : '#242840';
-    ctx.lineWidth = r%5===0 ? 1 : 0.5; ctx.stroke();
+    ctx.strokeStyle = r%10===0 ? '#3a4060' : (r%5===0 ? '#272b40' : '#1e2235');
+    ctx.lineWidth = r%10===0 ? 1 : 0.5; ctx.stroke();
   }
-  // Dimension labels — bright so they're actually readable
-  ctx.fillStyle = '#7a8ab8';
-  ctx.font = '9px DM Mono, monospace';
-  ctx.textAlign = 'center';
-  for (let c = 5; c <= COLS; c += 5) {
-    ctx.fillText((c*0.3).toFixed(1)+'m', c*CELL, 9);
-  }
+  // No background axis labels — room outline shows its own dimensions
+
+  // Usable area border — soft dashed rect showing where to draw
+  const m = 3;
+  ctx.strokeStyle = 'rgba(79,142,247,0.18)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([6, 5]);
+  ctx.strokeRect(m*CELL, m*CELL, (COLS-m*2)*CELL, (ROWS-m*2)*CELL);
+  ctx.setLineDash([]);
+
+  // Corner dimension hints — show the usable area size
+  ctx.fillStyle = 'rgba(79,142,247,0.35)';
+  ctx.font = '10px DM Mono, monospace';
   ctx.textAlign = 'left';
-  for (let r = 5; r <= ROWS; r += 5) {
-    ctx.fillText((r*0.3).toFixed(1)+'m', 2, r*CELL - 3);
-  }
+  ctx.fillText('4m × 4m', m*CELL + 6, m*CELL + 13);
 }
 
 function drawRoom() {
@@ -618,9 +710,9 @@ function drawRoom() {
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 11px DM Sans, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText((w*0.3).toFixed(2)+'m', px+pw/2, py-4);
+    ctx.fillText((w*0.1).toFixed(2)+'m', px+pw/2, py-4);
     ctx.save(); ctx.translate(px-7, py+ph/2); ctx.rotate(-Math.PI/2);
-    ctx.fillText((h*0.3).toFixed(2)+'m', 0, 0); ctx.restore();
+    ctx.fillText((h*0.1).toFixed(2)+'m', 0, 0); ctx.restore();
     // Section number badge for multi-section rooms
     if (rooms.length > 1) {
       ctx.fillStyle = 'rgba(79,142,247,0.7)';
@@ -641,7 +733,7 @@ function drawDragPreview() {
   ctx.strokeRect(x1,y1,x2-x1,y2-y1); ctx.setLineDash([]);
   if (dw>0 && dh>0) {
     ctx.fillStyle='#ffffff'; ctx.font='bold 11px DM Mono, monospace'; ctx.textAlign='center';
-    ctx.fillText(`${(dw*0.3).toFixed(2)}m × ${(dh*0.3).toFixed(2)}m`, x1+(x2-x1)/2, y1+(y2-y1)/2);
+    ctx.fillText(`${(dw*100).toFixed(0)}mm × ${(dh*100).toFixed(0)}mm`, x1+(x2-x1)/2, y1+(y2-y1)/2);
   }
 }
 
@@ -802,9 +894,10 @@ function drawFixture(item, selected) {
   // Resize handle (selected only)
   if (selected) {
     const rx=px+pw-1, ry=py+ph-1;
+    const hs = window.innerWidth <= 900 ? 14 : 8;
     ctx.fillStyle='#fff'; ctx.strokeStyle='#4f8ef7'; ctx.lineWidth=1.5;
-    ctx.beginPath(); ctx.roundRect(rx-5,ry-5,10,10,2); ctx.fill(); ctx.stroke();
-    ctx.fillStyle='#4f8ef7'; ctx.font='8px sans-serif';
+    ctx.beginPath(); ctx.roundRect(rx-hs,ry-hs,hs*2,hs*2,3); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#4f8ef7'; ctx.font=`${hs}px sans-serif`;
     ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText('⤡', rx, ry);
   }
@@ -846,6 +939,29 @@ function exportPNG() {
   link.download=`survey_${jobId}_${name.replace(/\s+/g,'_')}.png`;
   link.href=exp.toDataURL('image/png');
   link.click();
+}
+
+// ── SIDEBAR DRAWER (tablet) ──
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const bd = document.getElementById('sidebarBackdrop');
+  const isOpen = sb.classList.contains('open');
+  if (isOpen) { closeSidebar(); } else {
+    sb.classList.add('open');
+    bd.classList.add('open');
+  }
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarBackdrop').classList.remove('open');
+}
+
+// Auto-close sidebar after picking a tool on tablet
+const origSetMode = setMode;
+function setMode(m, type) {
+  origSetMode(m, type);
+  if (window.innerWidth <= 900) closeSidebar();
 }
 
 render();
