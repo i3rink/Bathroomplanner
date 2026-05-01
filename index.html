@@ -574,8 +574,6 @@ function onMove(e) {
     dragStart = {gx, gy};
     it.x = clamp(it.x + dx, 0, COLS - it.w);
     it.y = clamp(it.y + dy, 0, ROWS - it.h);
-    // Snap to room wall if within 2 cells
-    snapToWall(it);
     render();
   }
 }
@@ -983,116 +981,138 @@ function updateFixtureList() {
 
 // ── EXPORT PDF ──
 function exportPDF() {
-  const jobId  = document.getElementById('jobId').value.trim() || 'job';
-  const name   = document.getElementById('customerName').value.trim() || 'customer';
-  const date   = new Date().toLocaleDateString('en-GB');
+  const jobId = document.getElementById('jobId').value.trim() || 'job';
+  const name  = document.getElementById('customerName').value.trim() || 'customer';
+  const date  = new Date().toLocaleDateString('en-GB');
 
-  // Build fixture list text
+  // Fixture counts
   const counts = {};
   items.forEach(it => {
     const label = FIXTURE_DEFS[it.type].label;
     counts[label] = (counts[label] || 0) + 1;
   });
-  const fixtureLines = Object.entries(counts)
+  const fixtureRows = Object.entries(counts)
     .sort((a,b) => a[0].localeCompare(b[0]))
-    .map(([n,c]) => `${n}: ${c}`);
+    .map(([n,c]) => `<tr><td>${n}</td><td class="val">×${c}</td></tr>`)
+    .join('');
 
-  // Room dims
   const wText = document.getElementById('dimW').textContent;
   const hText = document.getElementById('dimH').textContent;
   const aText = document.getElementById('dimA').textContent;
+  const notesText = notes.length ? notes.map(n => '• ' + n.text).join('<br>') : 'None';
 
-  // Render canvas to image
-  const imgData = canvas.toDataURL('image/png');
+  // Crop canvas to just the drawn area with a small padding
+  let minX = COLS, minY = ROWS, maxX = 0, maxY = 0;
+  rooms.forEach(r => {
+    minX = Math.min(minX, r.x); minY = Math.min(minY, r.y);
+    maxX = Math.max(maxX, r.x + r.w); maxY = Math.max(maxY, r.y + r.h);
+  });
+  items.forEach(it => {
+    minX = Math.min(minX, it.x); minY = Math.min(minY, it.y);
+    maxX = Math.max(maxX, it.x + it.w); maxY = Math.max(maxY, it.y + it.h);
+  });
+  if (!rooms.length) { minX=0; minY=0; maxX=COLS; maxY=ROWS; }
+  const pad = 3;
+  minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
+  maxX = Math.min(COLS, maxX + pad); maxY = Math.min(ROWS, maxY + pad);
 
-  // Build a hidden print page and trigger print-to-PDF
+  // Crop to just the used area
+  const cropX = minX * CELL, cropY = minY * CELL;
+  const cropW = (maxX - minX) * CELL, cropH = (maxY - minY) * CELL;
+  const crop = document.createElement('canvas');
+  crop.width = cropW; crop.height = cropH;
+  crop.getContext('2d').drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+  const imgData = crop.toDataURL('image/png');
+
   const win = window.open('', '_blank');
-  const cw = canvas.width, ch = canvas.height;
-  // Scale canvas image to fit A4 landscape content area (~1050px wide)
-  const maxW = 900;
-  const scale = Math.min(1, maxW / cw);
-  const dispW = Math.round(cw * scale);
-  const dispH = Math.round(ch * scale);
-
   win.document.write(`<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <title>Survey — ${jobId} — ${name}</title>
 <style>
-  @page { size: A4 landscape; margin: 15mm; }
+  @page { size: A4 landscape; margin: 12mm 14mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a1d27; background: #fff; }
-  .header { display: flex; justify-content: space-between; align-items: flex-start;
-    border-bottom: 3px solid #4f8ef7; padding-bottom: 10px; margin-bottom: 14px; }
-  .brand { font-size: 20px; font-weight: 700; color: #4f8ef7; letter-spacing: 0.05em; }
-  .brand span { color: #1a1d27; }
-  .meta { text-align: right; font-size: 12px; color: #555; line-height: 1.7; }
-  .meta strong { color: #1a1d27; }
-  .body { display: flex; gap: 20px; align-items: flex-start; }
-  .drawing { flex: 1; }
-  .drawing img { width: ${dispW}px; height: ${dispH}px; border: 1px solid #dde; border-radius: 4px; display: block; }
-  .info { width: 180px; flex-shrink: 0; }
-  .info-section { margin-bottom: 14px; }
-  .info-label { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
-    color: #4f8ef7; margin-bottom: 6px; border-bottom: 1px solid #e0e8ff; padding-bottom: 3px; }
-  .dim-row { display: flex; justify-content: space-between; font-size: 11px;
-    padding: 2px 0; border-bottom: 1px solid #f0f2f8; color: #444; }
-  .dim-row span:last-child { font-weight: 600; color: #1a1d27; }
-  .fix-row { display: flex; justify-content: space-between; font-size: 11px;
-    padding: 2px 0; border-bottom: 1px solid #f0f2f8; color: #444; }
-  .fix-row span:last-child { font-weight: 700; color: #4f8ef7; }
-  .footer { margin-top: 12px; font-size: 9px; color: #aaa; text-align: center; border-top: 1px solid #eee; padding-top: 8px; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 11px;
+    color: #222; background: #fff; height: 100vh; display: flex; flex-direction: column; }
+
+  /* HEADER */
+  .hd { display:flex; justify-content:space-between; align-items:center;
+    padding-bottom: 8px; border-bottom: 2px solid #4f8ef7; margin-bottom: 10px; }
+  .hd-left { display:flex; align-items:baseline; gap:10px; }
+  .brand { font-size:18px; font-weight:800; color:#4f8ef7; letter-spacing:0.04em; }
+  .brand span { color:#222; }
+  .subtitle { font-size:11px; color:#888; }
+  .hd-right { display:flex; gap:24px; }
+  .hd-field { text-align:right; }
+  .hd-field .lbl { font-size:9px; text-transform:uppercase; letter-spacing:0.1em; color:#aaa; }
+  .hd-field .val { font-size:13px; font-weight:700; color:#222; }
+
+  /* BODY */
+  .body { display:flex; gap:16px; flex:1; min-height:0; }
+
+  /* DRAWING — takes up most of the space */
+  .drawing { flex:1; display:flex; align-items:center; justify-content:center;
+    border:1px solid #e0e4f0; border-radius:4px; overflow:hidden; background:#0f1117; padding:6px; }
+  .drawing img { max-width:100%; max-height:100%; object-fit:contain; display:block; }
+
+  /* INFO PANEL */
+  .info { width:190px; flex-shrink:0; display:flex; flex-direction:column; gap:12px; }
+  .section-title { font-size:9px; font-weight:700; letter-spacing:0.12em;
+    text-transform:uppercase; color:#4f8ef7; padding-bottom:4px;
+    border-bottom:1.5px solid #dde8ff; margin-bottom:4px; }
+  table { width:100%; border-collapse:collapse; }
+  td { padding:3px 0; border-bottom:1px solid #f0f2f8; color:#444; font-size:11px; }
+  td.val { text-align:right; font-weight:700; color:#222; }
+  td.cnt { text-align:right; font-weight:700; color:#4f8ef7; }
+  .notes-text { font-size:10px; color:#666; line-height:1.7; }
+
+  /* FOOTER */
+  .ft { margin-top:8px; padding-top:6px; border-top:1px solid #eee;
+    font-size:8.5px; color:#bbb; display:flex; justify-content:space-between; }
 </style>
 </head>
 <body>
-<div class="header">
-  <div>
+<div class="hd">
+  <div class="hd-left">
     <div class="brand">ANNICK <span>BATHROOMS</span></div>
-    <div style="font-size:11px;color:#888;margin-top:3px;">Survey Drawing</div>
+    <div class="subtitle">Survey Drawing</div>
   </div>
-  <div class="meta">
-    <div><strong>Job:</strong> ${jobId}</div>
-    <div><strong>Customer:</strong> ${name}</div>
-    <div><strong>Date:</strong> ${date}</div>
+  <div class="hd-right">
+    <div class="hd-field"><div class="lbl">Job ID</div><div class="val">${jobId}</div></div>
+    <div class="hd-field"><div class="lbl">Customer</div><div class="val">${name}</div></div>
+    <div class="hd-field"><div class="lbl">Date</div><div class="val">${date}</div></div>
   </div>
 </div>
+
 <div class="body">
-  <div class="drawing">
-    <img src="${imgData}" />
-  </div>
+  <div class="drawing"><img src="${imgData}"/></div>
   <div class="info">
-    <div class="info-section">
-      <div class="info-label">Room dimensions</div>
-      <div class="dim-row"><span>Width</span><span>${wText}</span></div>
-      <div class="dim-row"><span>Depth</span><span>${hText}</span></div>
-      <div class="dim-row"><span>Area</span><span>${aText}</span></div>
+    <div>
+      <div class="section-title">Room Dimensions</div>
+      <table>
+        <tr><td>Width</td><td class="val">${wText}</td></tr>
+        <tr><td>Depth</td><td class="val">${hText}</td></tr>
+        <tr><td>Area</td><td class="val">${aText}</td></tr>
+      </table>
     </div>
-    <div class="info-section">
-      <div class="info-label">Fixture schedule</div>
-      ${fixtureLines.length
-        ? fixtureLines.map(l => {
-            const [n,c] = l.split(': ');
-            return `<div class="fix-row"><span>${n}</span><span>×${c}</span></div>`;
-          }).join('')
-        : '<div style="font-size:11px;color:#aaa;">None placed</div>'
-      }
+    <div>
+      <div class="section-title">Fixture Schedule</div>
+      <table>${fixtureRows || '<tr><td colspan="2" style="color:#aaa">None placed</td></tr>'}</table>
     </div>
-    <div class="info-section">
-      <div class="info-label">Notes</div>
-      <div style="font-size:10px;color:#666;line-height:1.6;">
-        ${notes.length
-          ? notes.map(n => `• ${n.text}`).join('<br>')
-          : 'None'}
-      </div>
+    <div>
+      <div class="section-title">Notes</div>
+      <div class="notes-text">${notesText}</div>
     </div>
   </div>
 </div>
-<div class="footer">
-  Annick Bathrooms Ltd &nbsp;|&nbsp; Survey generated ${date} &nbsp;|&nbsp; For installation use only
+
+<div class="ft">
+  <span>Annick Bathrooms Ltd</span>
+  <span>Survey generated ${date}</span>
+  <span>For installation use only</span>
 </div>
-</body>
-</html>`);
+</body></html>`);
 
   win.document.close();
   win.focus();
