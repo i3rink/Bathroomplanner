@@ -92,6 +92,12 @@
   .modal input:focus { border-color: var(--accent); }
   .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
 
+  .fixture-list-row { display:flex; justify-content:space-between; align-items:center;
+    padding: 2px 0; border-bottom: 1px solid #1e2235; }
+  .fixture-list-row:last-child { border-bottom: none; }
+  .fixture-list-name { color: var(--text); }
+  .fixture-list-count { color: var(--accent); font-weight:600; }
+
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
@@ -187,7 +193,8 @@
   <div style="display:flex;gap:6px;">
     <button class="btn warn" onclick="redrawRoom()">↺ Undo Last Room</button>
     <button class="btn danger" onclick="clearAll()">Clear All</button>
-    <button class="btn primary" onclick="exportPNG()">💾 Save PNG</button>
+    <button class="btn" onclick="exportPNG()">🖼 Save PNG</button>
+    <button class="btn primary" onclick="exportPDF()">📄 Save PDF</button>
   </div>
 </header>
 
@@ -277,6 +284,13 @@
         for L-shapes etc.<br>
         Click item = select<br>
         R = rotate
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Fixture list</div>
+      <div id="fixtureList" style="font-size:11px;color:var(--text-dim);line-height:1.8;font-family:'DM Mono',monospace;">
+        <span style="color:#3a4060">— none placed yet —</span>
       </div>
     </div>
 
@@ -560,6 +574,8 @@ function onMove(e) {
     dragStart = {gx, gy};
     it.x = clamp(it.x + dx, 0, COLS - it.w);
     it.y = clamp(it.y + dy, 0, ROWS - it.h);
+    // Snap to room wall if within 2 cells
+    snapToWall(it);
     render();
   }
 }
@@ -664,6 +680,7 @@ function updateDims() {
 // ═══════════════════════════════
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  updateFixtureList();
   drawGrid();
   if (rooms.length) drawRoom();
   if (isDragging && dragStart && dragCurrent && mode === 'room') drawDragPreview();
@@ -919,7 +936,170 @@ function drawNote(n) {
   ctx.fillText(n.text, x+13, y);
 }
 
-// ── EXPORT ──
+// ── SNAP TO WALL ──
+function snapToWall(item) {
+  if (!rooms.length) return;
+  const SNAP = 2; // cells
+  let bestDist = SNAP + 1, snapX = null, snapY = null;
+  rooms.forEach(r => {
+    // Left wall
+    const dLeft = Math.abs(item.x - r.x);
+    if (dLeft <= SNAP && dLeft < bestDist) { bestDist = dLeft; snapX = r.x; snapY = null; }
+    // Right wall
+    const dRight = Math.abs((item.x + item.w) - (r.x + r.w));
+    if (dRight <= SNAP && dRight < bestDist) { bestDist = dRight; snapX = r.x + r.w - item.w; snapY = null; }
+    // Top wall
+    const dTop = Math.abs(item.y - r.y);
+    if (dTop <= SNAP && dTop < bestDist) { bestDist = dTop; snapY = r.y; snapX = null; }
+    // Bottom wall
+    const dBottom = Math.abs((item.y + item.h) - (r.y + r.h));
+    if (dBottom <= SNAP && dBottom < bestDist) { bestDist = dBottom; snapY = r.y + r.h - item.h; snapX = null; }
+  });
+  if (snapX !== null) item.x = snapX;
+  if (snapY !== null) item.y = snapY;
+}
+
+// ── FIXTURE LIST ──
+function updateFixtureList() {
+  const el = document.getElementById('fixtureList');
+  if (!items.length) {
+    el.innerHTML = '<span style="color:#3a4060">— none placed yet —</span>';
+    return;
+  }
+  const counts = {};
+  items.forEach(it => {
+    const label = FIXTURE_DEFS[it.type].label;
+    counts[label] = (counts[label] || 0) + 1;
+  });
+  el.innerHTML = Object.entries(counts)
+    .sort((a,b) => a[0].localeCompare(b[0]))
+    .map(([name, count]) =>
+      `<div class="fixture-list-row">
+        <span class="fixture-list-name">${name}</span>
+        <span class="fixture-list-count">×${count}</span>
+      </div>`)
+    .join('');
+}
+
+// ── EXPORT PDF ──
+function exportPDF() {
+  const jobId  = document.getElementById('jobId').value.trim() || 'job';
+  const name   = document.getElementById('customerName').value.trim() || 'customer';
+  const date   = new Date().toLocaleDateString('en-GB');
+
+  // Build fixture list text
+  const counts = {};
+  items.forEach(it => {
+    const label = FIXTURE_DEFS[it.type].label;
+    counts[label] = (counts[label] || 0) + 1;
+  });
+  const fixtureLines = Object.entries(counts)
+    .sort((a,b) => a[0].localeCompare(b[0]))
+    .map(([n,c]) => `${n}: ${c}`);
+
+  // Room dims
+  const wText = document.getElementById('dimW').textContent;
+  const hText = document.getElementById('dimH').textContent;
+  const aText = document.getElementById('dimA').textContent;
+
+  // Render canvas to image
+  const imgData = canvas.toDataURL('image/png');
+
+  // Build a hidden print page and trigger print-to-PDF
+  const win = window.open('', '_blank');
+  const cw = canvas.width, ch = canvas.height;
+  // Scale canvas image to fit A4 landscape content area (~1050px wide)
+  const maxW = 900;
+  const scale = Math.min(1, maxW / cw);
+  const dispW = Math.round(cw * scale);
+  const dispH = Math.round(ch * scale);
+
+  win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Survey — ${jobId} — ${name}</title>
+<style>
+  @page { size: A4 landscape; margin: 15mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a1d27; background: #fff; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start;
+    border-bottom: 3px solid #4f8ef7; padding-bottom: 10px; margin-bottom: 14px; }
+  .brand { font-size: 20px; font-weight: 700; color: #4f8ef7; letter-spacing: 0.05em; }
+  .brand span { color: #1a1d27; }
+  .meta { text-align: right; font-size: 12px; color: #555; line-height: 1.7; }
+  .meta strong { color: #1a1d27; }
+  .body { display: flex; gap: 20px; align-items: flex-start; }
+  .drawing { flex: 1; }
+  .drawing img { width: ${dispW}px; height: ${dispH}px; border: 1px solid #dde; border-radius: 4px; display: block; }
+  .info { width: 180px; flex-shrink: 0; }
+  .info-section { margin-bottom: 14px; }
+  .info-label { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    color: #4f8ef7; margin-bottom: 6px; border-bottom: 1px solid #e0e8ff; padding-bottom: 3px; }
+  .dim-row { display: flex; justify-content: space-between; font-size: 11px;
+    padding: 2px 0; border-bottom: 1px solid #f0f2f8; color: #444; }
+  .dim-row span:last-child { font-weight: 600; color: #1a1d27; }
+  .fix-row { display: flex; justify-content: space-between; font-size: 11px;
+    padding: 2px 0; border-bottom: 1px solid #f0f2f8; color: #444; }
+  .fix-row span:last-child { font-weight: 700; color: #4f8ef7; }
+  .footer { margin-top: 12px; font-size: 9px; color: #aaa; text-align: center; border-top: 1px solid #eee; padding-top: 8px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <div class="brand">ANNICK <span>BATHROOMS</span></div>
+    <div style="font-size:11px;color:#888;margin-top:3px;">Survey Drawing</div>
+  </div>
+  <div class="meta">
+    <div><strong>Job:</strong> ${jobId}</div>
+    <div><strong>Customer:</strong> ${name}</div>
+    <div><strong>Date:</strong> ${date}</div>
+  </div>
+</div>
+<div class="body">
+  <div class="drawing">
+    <img src="${imgData}" />
+  </div>
+  <div class="info">
+    <div class="info-section">
+      <div class="info-label">Room dimensions</div>
+      <div class="dim-row"><span>Width</span><span>${wText}</span></div>
+      <div class="dim-row"><span>Depth</span><span>${hText}</span></div>
+      <div class="dim-row"><span>Area</span><span>${aText}</span></div>
+    </div>
+    <div class="info-section">
+      <div class="info-label">Fixture schedule</div>
+      ${fixtureLines.length
+        ? fixtureLines.map(l => {
+            const [n,c] = l.split(': ');
+            return `<div class="fix-row"><span>${n}</span><span>×${c}</span></div>`;
+          }).join('')
+        : '<div style="font-size:11px;color:#aaa;">None placed</div>'
+      }
+    </div>
+    <div class="info-section">
+      <div class="info-label">Notes</div>
+      <div style="font-size:10px;color:#666;line-height:1.6;">
+        ${notes.length
+          ? notes.map(n => `• ${n.text}`).join('<br>')
+          : 'None'}
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer">
+  Annick Bathrooms Ltd &nbsp;|&nbsp; Survey generated ${date} &nbsp;|&nbsp; For installation use only
+</div>
+</body>
+</html>`);
+
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); }, 600);
+}
+
+// ── EXPORT PNG (kept as fallback) ──
 function exportPNG() {
   const jobId=document.getElementById('jobId').value.trim()||'job';
   const name=document.getElementById('customerName').value.trim()||'customer';
