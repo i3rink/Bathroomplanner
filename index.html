@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 5 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 6 — if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1020,8 +1020,16 @@ function drawFixture(item, selected) {
   ctx.save();
   ctx.fillStyle='#e8eaf0';
   ctx.font=`bold ${Math.min(10,Math.max(7,Math.min(pw,ph)/4))}px DM Sans, sans-serif`;
-  ctx.textAlign='center'; ctx.textBaseline='bottom';
-  ctx.fillText(def.label, cx, py+ph-2);
+  ctx.textAlign='center';
+  // Shower heads and WC pans sit inside other items — label at top to avoid overlap
+  const labelAtTop = ['shower_round','shower_sq','wc_round','wc_square'].includes(item.type);
+  if (labelAtTop) {
+    ctx.textBaseline='top';
+    ctx.fillText(def.label, cx, py+3);
+  } else {
+    ctx.textBaseline='bottom';
+    ctx.fillText(def.label, cx, py+ph-2);
+  }
 
   // Resize handle (selected only)
   if (selected) {
