@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 6 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 8 — if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -363,7 +363,7 @@ const FIXTURE_DEFS = {
                   hint:'Default 1700×600mm. Rotate for end-wall fit.' },
   shower_tray:  { w:9,  h:9, label:'Shower Tray',  color:'#a0c4ff', shape:'shower',
                   hint:'Default 900×900mm. Resize for 1200×900 etc.' },
-  shower_round: { w:2,  h:3, label:'Shower Head',  color:'#c8e6ff', shape:'shower_round',
+  shower_round: { w:3,  h:3, label:'Shower Head',  color:'#c8e6ff', shape:'shower_round',
                   hint:'Round shower head.' },
   shower_sq:    { w:9,  h:9, label:'Shower Head',  color:'#c8e6ff', shape:'shower_sq',
                   hint:'Square shower head.' },
@@ -543,9 +543,12 @@ function onDown(e) {
     }
     saveHistory();
     const d = FIXTURE_DEFS[placeType];
-    // Centre on click point by default
-    let px = clamp(Math.round(gx - d.w/2), 0, COLS - d.w);
-    let py = clamp(Math.round(gy - d.h/2), 0, ROWS - d.h);
+    // Centre on click point by default — floor/ceil pick whichever is visually closest
+    const _rawPx = gx - d.w/2, _rawPy = gy - d.h/2;
+    const _flPx = Math.floor(_rawPx), _cePx = Math.ceil(_rawPx);
+    const _flPy = Math.floor(_rawPy), _cePy = Math.ceil(_rawPy);
+    let px = clamp(Math.abs((_flPx+d.w/2)-gx)<=Math.abs((_cePx+d.w/2)-gx)?_flPx:_cePx, 0, COLS-d.w);
+    let py = clamp(Math.abs((_flPy+d.h/2)-gy)<=Math.abs((_cePy+d.h/2)-gy)?_flPy:_cePy, 0, ROWS-d.h);
 
     // Snap to centre of nearest existing item if click is within 4 cells of its centre
     // Works for any size — uses exact float midpoints so odd sizes (9→4.5, 7→3.5) are handled
@@ -558,8 +561,18 @@ function onDown(e) {
       if (dist <= SNAP_DIST && dist < bestDist) {
         bestDist = dist;
         // Centre the new item on that midpoint — Math.round handles .5 gracefully
-        snapX = clamp(Math.round(itCx - d.w / 2), 0, COLS - d.w);
-        snapY = clamp(Math.round(itCy - d.h / 2), 0, ROWS - d.h);
+        // Find integer position whose centre is closest to target centre.
+        // For odd-sized targets (centre = x.5) and even-sized items, Math.round
+        // can land one cell off. Instead, try both floor and ceil and pick whichever
+        // puts the item's visual centre nearest to the target.
+        const rawX = itCx - d.w / 2;
+        const rawY = itCy - d.h / 2;
+        const flX = Math.floor(rawX), ceX = Math.ceil(rawX);
+        const flY = Math.floor(rawY), ceY = Math.ceil(rawY);
+        const bestX = Math.abs((flX + d.w/2) - itCx) <= Math.abs((ceX + d.w/2) - itCx) ? flX : ceX;
+        const bestY = Math.abs((flY + d.h/2) - itCy) <= Math.abs((ceY + d.h/2) - itCy) ? flY : ceY;
+        snapX = clamp(bestX, 0, COLS - d.w);
+        snapY = clamp(bestY, 0, ROWS - d.h);
       }
     });
     if (snapX !== null) { px = snapX; py = snapY; }
