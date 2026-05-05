@@ -92,6 +92,15 @@
   .modal input:focus { border-color: var(--accent); }
   .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
 
+  .sub-group { display:none; margin-top:6px; padding-top:6px;
+    border-top:1px dashed var(--border); }
+  .sub-group.open { display:block; }
+  .sub-group-label { font-size:9px; color:var(--text-dim); letter-spacing:0.1em;
+    text-transform:uppercase; margin-bottom:6px; }
+  .tool-btn.sub { background: rgba(79,142,247,0.06); font-size:10px; padding:6px 4px 5px; }
+  .tool-btn.sub:hover { border-color:var(--accent); color:var(--accent); }
+  .tool-btn.sub.active { background:rgba(79,142,247,0.2); border-color:var(--accent); color:var(--accent); }
+
   .fixture-list-row { display:flex; justify-content:space-between; align-items:center;
     padding: 2px 0; border-bottom: 1px solid #1e2235; }
   .fixture-list-row:last-child { border-bottom: none; }
@@ -246,11 +255,31 @@
       <div class="sidebar-label">Sanitaryware</div>
       <div class="tool-grid">
         <button class="tool-btn" id="tool-place-bath" onclick="setMode('place','bath')"><span class="icon">🛁</span>Bath</button>
-        <button class="tool-btn" id="tool-place-shower" onclick="setMode('place','shower')"><span class="icon">🚿</span>Shower</button>
-        <button class="tool-btn" id="tool-place-wc" onclick="setMode('place','wc')"><span class="icon">🚽</span>WC</button>
+        <button class="tool-btn" id="tool-shower-group" onclick="toggleGroup('shower')"><span class="icon">🚿</span>Shower</button>
+        <button class="tool-btn" id="tool-wc-group" onclick="toggleGroup('wc')"><span class="icon">🚽</span>WC</button>
         <button class="tool-btn" id="tool-place-basin" onclick="setMode('place','basin')"><span class="icon">🚰</span>Basin</button>
         <button class="tool-btn" id="tool-place-furniture" onclick="setMode('place','furniture')"><span class="icon">🪞</span>Furniture</button>
+        <button class="tool-btn" id="tool-place-mirror" onclick="setMode('place','mirror')"><span class="icon">🔲</span>Mirror</button>
         <button class="tool-btn" id="tool-place-storage" onclick="setMode('place','storage')"><span class="icon">🗄</span>Storage</button>
+      </div>
+      <!-- Shower sub-options -->
+      <div class="sub-group" id="group-shower">
+        <div class="sub-group-label">Shower options</div>
+        <div class="tool-grid">
+          <button class="tool-btn sub" id="tool-place-shower_tray" onclick="setMode('place','shower_tray')"><span class="icon">⬜</span>Tray</button>
+          <button class="tool-btn sub" id="tool-place-shower_round" onclick="setMode('place','shower_round')"><span class="icon">🔵</span>Head (round)</button>
+          <button class="tool-btn sub" id="tool-place-shower_sq" onclick="setMode('place','shower_sq')"><span class="icon">⬛</span>Head (square)</button>
+          <button class="tool-btn sub" id="tool-place-screen" onclick="setMode('place','screen')"><span class="icon">▬</span>Screen</button>
+        </div>
+      </div>
+      <!-- WC sub-options -->
+      <div class="sub-group" id="group-wc">
+        <div class="sub-group-label">WC options</div>
+        <div class="tool-grid">
+          <button class="tool-btn sub" id="tool-place-wc_unit" onclick="setMode('place','wc_unit')"><span class="icon">⬜</span>WC Unit</button>
+          <button class="tool-btn sub" id="tool-place-wc_round" onclick="setMode('place','wc_round')"><span class="icon">🔵</span>Pan (round)</button>
+          <button class="tool-btn sub" id="tool-place-wc_square" onclick="setMode('place','wc_square')"><span class="icon">⬛</span>Pan (square)</button>
+        </div>
       </div>
     </div>
 
@@ -329,30 +358,42 @@ canvas.height = ROWS * CELL + 1;
 // Default sizes: 1 cell = 30cm
 // rotation: 0=0deg 1=90deg 2=180deg 3=270deg. Canvas transform handles all four.
 const FIXTURE_DEFS = {
-  bath:      { w:17, h:6, label:'Bath',       color:'#4f8ef7', shape:'bath',
-               hint:'Default 1800×600mm. Select then Rotate for end-wall fit.' },
-  shower:    { w:6, h:6, label:'Shower',     color:'#a0c4ff', shape:'shower',
-               hint:'Default 900×900mm. Resize for 1200×900 etc.' },
-  wc:        { w:4, h:6, label:'WC',         color:'#f7c94f', shape:'wc',
-               hint:'Default 600×600mm. Rotate to face any wall.' },
-  basin:     { w:6, h:5, label:'Basin',      color:'#4ff7c9', shape:'basin',
-               hint:'Default 600×600mm. Rotate to mount on any wall.' },
-  furniture: { w:6, h:5, label:'Furniture',  color:'#b07fff', shape:'furniture',
-               hint:'Vanity unit / fitted furniture. Resize to match.' },
-  storage:   { w:6, h:5, label:'Storage',    color:'#8a8a8a', shape:'rect',
-               hint:'Freestanding storage. Adjust to match dimensions.' },
-  window:    { w:9, h:2, label:'Window',     color:'#a0e0ff', shape:'window',
-               hint:'Rotate to place on side walls.' },
-  door:      { w:7, h:7, label:'Door',       color:'#f7a04f', shape:'door',
-               hint:'Rotate to change which wall and swing direction.' },
-  towelrail: { w:3, h:1, label:'Towel Rail', color:'#f74f8e', shape:'rail',
-               hint:'Default horizontal. Rotate to place vertically.' },
-  radiator:  { w:4, h:1, label:'Radiator',   color:'#f76a4f', shape:'radiator',
-               hint:'Default horizontal. Rotate to place vertically.' },
-  pipe:      { w:3, h:1, label:'Pipe',       color:'#aaa',    shape:'pipe',
-               hint:'One cell = pipe or soil stack location.' },
-  drain:     { w:2, h:2, label:'Drain',      color:'#7b82a0', shape:'drain',
-               hint:'One cell = floor drain or waste point.' },
+  bath:         { w:17, h:6, label:'Bath',         color:'#4f8ef7', shape:'bath_rect',
+                  hint:'Default 1700×600mm. Rotate for end-wall fit.' },
+  shower_tray:  { w:9,  h:9, label:'Shower Tray',  color:'#a0c4ff', shape:'shower',
+                  hint:'Default 900×900mm. Resize for 1200×900 etc.' },
+  shower_round: { w:9,  h:9, label:'Shower Head',  color:'#c8e6ff', shape:'shower_round',
+                  hint:'Round shower head.' },
+  shower_sq:    { w:9,  h:9, label:'Shower Head',  color:'#c8e6ff', shape:'shower_sq',
+                  hint:'Square shower head.' },
+  screen:       { w:6,  h:1, label:'Screen',       color:'#80d4ff', shape:'screen',
+                  hint:'Shower screen. Default 600×100mm. Rotate to fit.' },
+  wc_unit:      { w:4,  h:6, label:'WC Unit',      color:'#b8a060', shape:'rect',
+                  hint:'WC unit / back-to-wall housing.' },
+  wc_round:     { w:4,  h:5, label:'WC Pan',       color:'#f7c94f', shape:'wc_round',
+                  hint:'Round pan. Rotate to face any wall.' },
+  wc_square:    { w:4,  h:5, label:'WC Pan',       color:'#f7c94f', shape:'wc_square',
+                  hint:'Square pan. Rotate to face any wall.' },
+  basin:        { w:6,  h:5, label:'Basin',        color:'#4ff7c9', shape:'basin',
+                  hint:'Default 600×500mm. Rotate to mount on any wall.' },
+  furniture:    { w:6,  h:5, label:'Furniture',    color:'#b07fff', shape:'furniture',
+                  hint:'Vanity unit / fitted furniture. Resize to match.' },
+  mirror:       { w:6,  h:1, label:'Mirror',       color:'#e0f0ff', shape:'mirror',
+                  hint:'Default 600×100mm. Rotate and resize to match.' },
+  storage:      { w:6,  h:5, label:'Storage',      color:'#8a8a8a', shape:'rect',
+                  hint:'Freestanding storage. Adjust to match dimensions.' },
+  window:       { w:9,  h:2, label:'Window',       color:'#a0e0ff', shape:'window',
+                  hint:'Rotate to place on side walls.' },
+  door:         { w:7,  h:7, label:'Door',         color:'#f7a04f', shape:'door',
+                  hint:'Rotate to change which wall and swing direction.' },
+  towelrail:    { w:3,  h:1, label:'Towel Rail',   color:'#f74f8e', shape:'rail',
+                  hint:'Default 300×100mm. Rotate to place vertically.' },
+  radiator:     { w:4,  h:1, label:'Radiator',     color:'#f76a4f', shape:'radiator',
+                  hint:'Default horizontal. Rotate to place vertically.' },
+  pipe:         { w:3,  h:1, label:'Pipe',         color:'#aaa',    shape:'pipe',
+                  hint:'Pipe or soil stack location.' },
+  drain:        { w:2,  h:2, label:'Drain',        color:'#7b82a0', shape:'drain',
+                  hint:'Floor drain or waste point.' },
 };
 
 let mode = 'room', placeType = null;
@@ -501,10 +542,12 @@ function onDown(e) {
     }
     saveHistory();
     const d = FIXTURE_DEFS[placeType];
+    // Centre on click point
+    const px = clamp(Math.round(gx - d.w/2), 0, COLS - d.w);
+    const py = clamp(Math.round(gy - d.h/2), 0, ROWS - d.h);
     items.push({
       type: placeType,
-      x: clamp(gx, 0, COLS - d.w),
-      y: clamp(gy, 0, ROWS - d.h),
+      x: px, y: py,
       w: d.w, h: d.h,
       rotation: 0,
       baseW: d.w, baseH: d.h
@@ -783,15 +826,67 @@ function drawFixture(item, selected) {
   ctx.strokeStyle=col; ctx.lineWidth=1.2;
 
 
-  if (def.shape==='bath') {
-    ctx.beginPath(); ctx.ellipse(0,0,hw-5,hh-4,0,0,Math.PI*2); ctx.stroke();
-    ctx.fillStyle=col+'25';
-    ctx.beginPath(); ctx.ellipse(0,0,hw-9,hh-7,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
-    // Taps at "top" (back wall = -hh), drain at "bottom"
+  if (def.shape==='bath_rect' || def.shape==='bath') {
+    // Plain rectangle bath — taps one end, drain other
+    ctx.fillStyle=col+'20';
+    ctx.beginPath(); ctx.roundRect(-hw+3,-hh+3,hw*2-6,hh*2-6,2); ctx.fill(); ctx.stroke();
     ctx.fillStyle=col;
-    ctx.beginPath(); ctx.arc(-5,-hh+9,2.5,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc( 5,-hh+9,2.5,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(0,hh-10,3,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(-6,-hh+8,2.5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc( 6,-hh+8,2.5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0,hh-8,3,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-3,hh-8); ctx.lineTo(3,hh-8); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,hh-11); ctx.lineTo(0,hh-5); ctx.stroke();
+
+  } else if (def.shape==='shower_round') {
+    // Round shower head
+    const r = Math.min(hw,hh)-4;
+    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2);
+    ctx.fillStyle=col+'30'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle=col;
+    ctx.beginPath(); ctx.arc(0,0,4,0,Math.PI*2); ctx.fill();
+    for (let a=0;a<8;a++) {
+      const ang=a*Math.PI/4, rd=r*0.55;
+      ctx.beginPath(); ctx.arc(Math.cos(ang)*rd,Math.sin(ang)*rd,2.5,0,Math.PI*2); ctx.fill();
+    }
+
+  } else if (def.shape==='shower_sq') {
+    // Square shower head
+    ctx.fillStyle=col+'30';
+    ctx.beginPath(); ctx.roundRect(-hw+4,-hh+4,hw*2-8,hh*2-8,4); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=col;
+    const gRows=3, gCols=3;
+    const gW=(hw*2-20)/(gCols-1), gH=(hh*2-20)/(gRows-1);
+    for (let r=0;r<gRows;r++) for (let c=0;c<gCols;c++) {
+      ctx.beginPath();
+      ctx.arc(-hw+10+c*gW,-hh+10+r*gH,2.5,0,Math.PI*2); ctx.fill();
+    }
+
+  } else if (def.shape==='wc_round') {
+    // Round WC pan
+    ctx.fillStyle=col+'28';
+    ctx.beginPath(); ctx.ellipse(0,0,hw-4,hh-4,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0,0,hw-9,hh-9,0,0,Math.PI*2); ctx.stroke();
+
+  } else if (def.shape==='wc_square') {
+    // Square WC pan with rounded corners
+    ctx.fillStyle=col+'28';
+    ctx.beginPath(); ctx.roundRect(-hw+4,-hh+4,hw*2-8,hh*2-8,5); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.roundRect(-hw+9,-hh+9,hw*2-18,hh*2-18,4); ctx.stroke();
+
+  } else if (def.shape==='mirror') {
+    // Mirror — thin rect with reflection sheen
+    ctx.fillStyle=col+'40';
+    ctx.beginPath(); ctx.roundRect(-hw+2,-hh+2,hw*2-4,hh*2-4,2); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle=col+'80'; ctx.lineWidth=0.8;
+    ctx.beginPath(); ctx.moveTo(-hw+5,hh-3); ctx.lineTo(hw-10,-hh+3); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-hw+10,hh-3); ctx.lineTo(hw-5,-hh+3); ctx.stroke();
+
+  } else if (def.shape==='screen') {
+    // Shower screen — thin glass panel
+    ctx.fillStyle=col+'30';
+    ctx.beginPath(); ctx.rect(-hw+2,-hh+2,hw*2-4,hh*2-4); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle=col+'80'; ctx.lineWidth=0.8;
+    ctx.beginPath(); ctx.moveTo(-hw+5,-hh+3); ctx.lineTo(-hw+9,hh-3); ctx.stroke();
 
   } else if (def.shape==='shower') {
     ctx.beginPath(); ctx.arc(0,0,5,0,Math.PI*2); ctx.stroke();
@@ -1163,6 +1258,20 @@ function exportPNG() {
   link.download=`survey_${jobId}_${name.replace(/\s+/g,'_')}.png`;
   link.href=exp.toDataURL('image/png');
   link.click();
+}
+
+// ── SUB-GROUPS ──
+function toggleGroup(name) {
+  const el = document.getElementById('group-' + name);
+  const btn = document.getElementById('tool-' + name + '-group');
+  const isOpen = el.classList.contains('open');
+  // Close all groups first
+  document.querySelectorAll('.sub-group').forEach(g => g.classList.remove('open'));
+  document.querySelectorAll('[id^="tool-"][id$="-group"]').forEach(b => b.classList.remove('active'));
+  if (!isOpen) {
+    el.classList.add('open');
+    btn.classList.add('active');
+  }
 }
 
 // ── SIDEBAR DRAWER (tablet) ──
