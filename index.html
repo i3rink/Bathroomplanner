@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- ANNICK SURVEY TOOL — VERSION 5 — if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -362,7 +363,7 @@ const FIXTURE_DEFS = {
                   hint:'Default 1700×600mm. Rotate for end-wall fit.' },
   shower_tray:  { w:9,  h:9, label:'Shower Tray',  color:'#a0c4ff', shape:'shower',
                   hint:'Default 900×900mm. Resize for 1200×900 etc.' },
-  shower_round: { w:9,  h:9, label:'Shower Head',  color:'#c8e6ff', shape:'shower_round',
+  shower_round: { w:2,  h:3, label:'Shower Head',  color:'#c8e6ff', shape:'shower_round',
                   hint:'Round shower head.' },
   shower_sq:    { w:9,  h:9, label:'Shower Head',  color:'#c8e6ff', shape:'shower_sq',
                   hint:'Square shower head.' },
@@ -542,9 +543,27 @@ function onDown(e) {
     }
     saveHistory();
     const d = FIXTURE_DEFS[placeType];
-    // Centre on click point
-    const px = clamp(Math.round(gx - d.w/2), 0, COLS - d.w);
-    const py = clamp(Math.round(gy - d.h/2), 0, ROWS - d.h);
+    // Centre on click point by default
+    let px = clamp(Math.round(gx - d.w/2), 0, COLS - d.w);
+    let py = clamp(Math.round(gy - d.h/2), 0, ROWS - d.h);
+
+    // Snap to centre of nearest existing item if click is within 4 cells of its centre
+    // Works for any size — uses exact float midpoints so odd sizes (9→4.5, 7→3.5) are handled
+    const SNAP_DIST = 4;
+    let bestDist = SNAP_DIST + 1, snapX = null, snapY = null;
+    items.forEach(it => {
+      const itCx = it.x + it.w / 2;  // exact float midpoint
+      const itCy = it.y + it.h / 2;
+      const dist = Math.abs(gx - itCx) + Math.abs(gy - itCy);
+      if (dist <= SNAP_DIST && dist < bestDist) {
+        bestDist = dist;
+        // Centre the new item on that midpoint — Math.round handles .5 gracefully
+        snapX = clamp(Math.round(itCx - d.w / 2), 0, COLS - d.w);
+        snapY = clamp(Math.round(itCy - d.h / 2), 0, ROWS - d.h);
+      }
+    });
+    if (snapX !== null) { px = snapX; py = snapY; }
+
     items.push({
       type: placeType,
       x: px, y: py,
