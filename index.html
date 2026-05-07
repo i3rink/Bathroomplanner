@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 28 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 29 — if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -374,7 +374,7 @@
             <option value="0">250 × 2700mm (pack 4)</option>
             <option value="1">1000 × 2400mm (single)</option>
             <option value="2">600 × 2600mm (pack 2)</option>
-            <option value="3">300 × 1200mm — Urban Decor (+10% waste)</option>
+            <option value="3">Urban Decor 300×1200mm — sqm coverage 2.16m²/pk (+10% waste)</option>
           </select>
         </div>
         <div style="font-size:9px;color:var(--text-dim);margin-bottom:4px;">Select walls to include</div>
@@ -391,7 +391,7 @@
           text-transform:uppercase;margin:10px 0 4px;padding-top:8px;border-top:1px solid var(--border);">
           Ceiling
         </div>
-        <div style="font-size:9px;color:var(--text-dim);margin-bottom:4px;">4.5m² per pack</div>
+        <div style="font-size:9px;color:var(--text-dim);margin-bottom:4px;">2.7m² per pack</div>
         <div id="ceilResults"><div class="panel-no-room">Draw a room first</div></div>
 
         <!-- FLOOR -->
@@ -616,11 +616,11 @@ function rotateSelected() {
   it.rotation = ((it.rotation || 0) + 1) % 4;
   // Bounding box: even rotations (0,180) use baseW×baseH, odd (90,270) use baseH×baseW
   if (it.rotation % 2 === 1) {
-    it.w = clamp(it.baseH, 1, COLS - it.x);
-    it.h = clamp(it.baseW, 1, ROWS - it.y);
+    it.w = clamp(it.baseH, 0.25, COLS - it.x);
+    it.h = clamp(it.baseW, 0.25, ROWS - it.y);
   } else {
-    it.w = clamp(it.baseW, 1, COLS - it.x);
-    it.h = clamp(it.baseH, 1, ROWS - it.y);
+    it.w = clamp(it.baseW, 0.25, COLS - it.x);
+    it.h = clamp(it.baseH, 0.25, ROWS - it.y);
   }
   updateSelectedPanel();
   render();
@@ -726,8 +726,8 @@ function onMove(e) {
     dragCurrent = {gx: clamp(gx,0,COLS-1), gy: clamp(gy,0,ROWS-1)};
     render();
   } else if (isResizing && resizeItem && resizeStart) {
-    resizeItem.w = clamp(resizeStart.origW + (gx - resizeStart.gx), 1, COLS - resizeItem.x);
-    resizeItem.h = clamp(resizeStart.origH + (gy - resizeStart.gy), 1, ROWS - resizeItem.y);
+    resizeItem.w = clamp(Math.round((resizeStart.origW + (gx - resizeStart.gx))*4)/4, 0.25, COLS - resizeItem.x);
+    resizeItem.h = clamp(Math.round((resizeStart.origH + (gy - resizeStart.gy))*4)/4, 0.25, ROWS - resizeItem.y);
     // Keep canonical base dimensions in sync with current rotation
     if ((resizeItem.rotation || 0) % 2 === 0) {
       resizeItem.baseW = resizeItem.w;
@@ -744,8 +744,8 @@ function onMove(e) {
     const dx = gx - dragStart.gx, dy = gy - dragStart.gy;
     if (!dx && !dy) return;
     dragStart = {gx, gy};
-    it.x = clamp(it.x + dx, 0, COLS - it.w);
-    it.y = clamp(it.y + dy, 0, ROWS - it.h);
+    it.x = clamp(Math.round((it.x + dx)*4)/4, 0, COLS - it.w);
+    it.y = clamp(Math.round((it.y + dy)*4)/4, 0, ROWS - it.h);
     render();
   }
 }
@@ -1451,7 +1451,7 @@ function exportPDF() {
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 28 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 29 — if you can see this in Notepad, you have the right file -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -1628,7 +1628,7 @@ const FLOOR_TYPES = [
   { name:'Mosaic',       sqmPerPack:2.05, waste:0    },
 ];
 
-const CEIL_SQM_PER_PACK = 4.5;
+const CEIL_SQM_PER_PACK = 2.7;
 
 function calcPanels() {
   const wallEl = document.getElementById('wallResults');
