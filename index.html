@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 30 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 31 — if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1451,7 +1451,7 @@ function exportPDF() {
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 30 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 31 — if you can see this in Notepad, you have the right file -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -1658,11 +1658,9 @@ function calcPanels() {
   // ── WALL RESULTS ──
   let wHtml = '<div class="panel-type">';
   if (p.sqmPerPack) {
-    // ── Urban Decor — sqm based with wastage ──
+    // ── Urban Decor — sqm based, fits any orientation so no height check ──
     wHtml += `<div class="panel-type-name">${p.name}</div>`;
-    if (p.ph < ceilH) {
-      wHtml += `<div class="panel-result-row"><span style="color:#f74f4f">⚠ Panel (${p.ph}mm) shorter than room height (${ceilH}mm)</span></div>`;
-    } else {
+    {
       // Calculate total wall area for selected walls
       let totalWallArea = 0;
       ['north','south','east','west'].forEach(w => {
