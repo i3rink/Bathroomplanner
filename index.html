@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 31 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 32 — if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -425,9 +425,9 @@
     <div class="sidebar-section">
       <div class="sidebar-label">Grid key</div>
       <div class="dim-display" style="font-size:11px;color:var(--text-dim);line-height:1.7;">
-        Grid: 1 cell = 100mm<br>
+        Grid: 1 cell = 20mm<br>
         Canvas: 4m × 4m max<br>
-        Resize inputs: 25mm steps<br>
+        Resize inputs: 20mm steps<br>
         Draw multiple sections<br>
         for L-shapes &amp; recesses<br>
         Click item = select it<br>
@@ -460,8 +460,8 @@
 </div>
 
 <script>
-const COLS = 40, ROWS = 40, CELL = 16;
-const MM_PER_CELL = 100; // 1 cell = 100mm
+const COLS = 200, ROWS = 200, CELL = 3;
+const MM_PER_CELL = 20; // 1 cell = 20mm
 const canvas = document.getElementById('mainCanvas');
 let ctx = canvas.getContext('2d');
 canvas.width = COLS * CELL + 1;
@@ -470,51 +470,51 @@ canvas.height = ROWS * CELL + 1;
 // Default sizes: 1 cell = 30cm
 // rotation: 0=0deg 1=90deg 2=180deg 3=270deg. Canvas transform handles all four.
 const FIXTURE_DEFS = {
-  bath:         { w:17, h:7,  label:'Bath',         color:'#4f8ef7', shape:'bath_rect',
+  bath:         { w:85, h:35,  label:'Bath',         color:'#4f8ef7', shape:'bath_rect',
                   hint:'Default 1700×700mm. Rotate for end-wall fit.' },
-  shower_tray:  { w:17, h:7,  label:'Shower Tray',  color:'#a0c4ff', shape:'shower',
+  shower_tray:  { w:85, h:35,  label:'Shower Tray',  color:'#a0c4ff', shape:'shower',
                   hint:'Default 1700×700mm. Resize as needed.' },
-  shower_round: { w:2,  h:2,  label:'Shower Head',  color:'#4ea4ed', shape:'shower_round',
+  shower_round: { w:10, h:10,  label:'Shower Head',  color:'#4ea4ed', shape:'shower_round',
                   hint:'Round shower head. Default 200×200mm.' },
-  shower_sq:    { w:2,  h:2,  label:'Shower Head',  color:'#4ea4ed', shape:'shower_sq',
+  shower_sq:    { w:10, h:10,  label:'Shower Head',  color:'#4ea4ed', shape:'shower_sq',
                   hint:'Square shower head. Default 200×200mm.' },
-  screen:       { w:6,  h:1,  label:'Screen',       color:'#80d4ff', shape:'screen',
+  screen:       { w:30, h:5,  label:'Screen',       color:'#80d4ff', shape:'screen',
                   hint:'Shower screen. Default 600×100mm. Rotate to fit.' },
-  wc_unit:      { w:4,  h:6,  label:'WC Unit',      color:'#b8a060', shape:'rect',
+  wc_unit:      { w:20, h:30,  label:'WC Unit',      color:'#b8a060', shape:'rect',
                   hint:'WC unit / back-to-wall housing.' },
-  wc_round:     { w:4,  h:5,  label:'BTW Pan',      color:'#f7c94f', shape:'wc_round',
+  wc_round:     { w:20, h:25,  label:'BTW Pan',      color:'#f7c94f', shape:'wc_round',
                   hint:'Round pan. Rotate to face any wall.' },
-  wc_square:    { w:4,  h:5,  label:'BTW Pan',      color:'#f7c94f', shape:'wc_square',
+  wc_square:    { w:20, h:25,  label:'BTW Pan',      color:'#f7c94f', shape:'wc_square',
                   hint:'Square pan. Rotate to face any wall.' },
-  basin_round:  { w:5.5,h:3.3,label:'Basin',        color:'#4ff7c9', shape:'basin',
+  basin_round:  { w:27, h:17,label:'Basin',        color:'#4ff7c9', shape:'basin',
                   hint:'Round basin 550×330mm.' },
-  basin_square: { w:3.5,h:5,  label:'Basin',        color:'#4ff7c9', shape:'basin_sq',
+  basin_square: { w:17, h:25,  label:'Basin',        color:'#4ff7c9', shape:'basin_sq',
                   hint:'Square basin 350×500mm.' },
-  furniture:    { w:6,  h:5,  label:'Furniture',    color:'#b07fff', shape:'furniture',
+  furniture:    { w:30, h:25,  label:'Furniture',    color:'#b07fff', shape:'furniture',
                   hint:'Vanity unit / fitted furniture. Resize to match.' },
-  mirror:       { w:6,  h:1,  label:'Mirror',       color:'#e0f0ff', shape:'mirror',
+  mirror:       { w:30, h:5,  label:'Mirror',       color:'#e0f0ff', shape:'mirror',
                   hint:'Default 600×100mm. Rotate and resize to match.' },
-  storage:      { w:6,  h:5,  label:'Storage',      color:'#8a8a8a', shape:'rect',
+  storage:      { w:30, h:25,  label:'Storage',      color:'#8a8a8a', shape:'rect',
                   hint:'Freestanding storage. Adjust to match dimensions.' },
-  window:       { w:9,  h:2,  label:'Window',       color:'#a0e0ff', shape:'window',
+  window:       { w:45, h:10,  label:'Window',       color:'#a0e0ff', shape:'window',
                   hint:'Rotate to place on side walls.' },
-  door:         { w:7,  h:7,  label:'Door',         color:'#f7a04f', shape:'door',
+  door:         { w:35, h:35,  label:'Door',         color:'#f7a04f', shape:'door',
                   hint:'Rotate to change which wall and swing direction.' },
-  towelrail:    { w:3,  h:1,  label:'Towel Rail',   color:'#f74f8e', shape:'rail',
+  towelrail:    { w:15, h:5,  label:'Towel Rail',   color:'#f74f8e', shape:'rail',
                   hint:'Default 300×100mm. Rotate to place vertically.' },
-  radiator:     { w:4,  h:1,  label:'Radiator',     color:'#f76a4f', shape:'radiator',
+  radiator:     { w:20, h:5,  label:'Radiator',     color:'#f76a4f', shape:'radiator',
                   hint:'Default horizontal. Rotate to place vertically.' },
-  pipe:         { w:3,  h:1,  label:'Waste Pipe',   color:'#aaa',    shape:'pipe',
+  pipe:         { w:15, h:5,  label:'Waste Pipe',   color:'#aaa',    shape:'pipe',
                   hint:'Waste pipe location.' },
-  pipe_hot:     { w:3,  h:1,  label:'Hot Pipe',     color:'#f74f4f', shape:'pipe',
+  pipe_hot:     { w:15, h:5,  label:'Hot Pipe',     color:'#f74f4f', shape:'pipe',
                   hint:'Hot water pipe. Red.' },
-  pipe_cold:    { w:3,  h:1,  label:'Cold Pipe',    color:'#4f8ef7', shape:'pipe',
+  pipe_cold:    { w:15, h:5,  label:'Cold Pipe',    color:'#4f8ef7', shape:'pipe',
                   hint:'Cold water pipe. Blue.' },
-  drain:        { w:2,  h:2,  label:'Drain',        color:'#7b82a0', shape:'drain',
+  drain:        { w:10, h:10,  label:'Drain',        color:'#7b82a0', shape:'drain',
                   hint:'Floor drain or waste point.' },
-  tap_basin:    { w:1,  h:3,  label:'Basin Taps',   color:'#c0d8f0', shape:'taps',
+  tap_basin:    { w:5,  h:15,  label:'Basin Taps',   color:'#c0d8f0', shape:'taps',
                   hint:'Basin taps. 100×300mm.' },
-  tap_bath:     { w:1,  h:3,  label:'Bath Taps',    color:'#c0d8f0', shape:'taps',
+  tap_bath:     { w:5,  h:15,  label:'Bath Taps',    color:'#c0d8f0', shape:'taps',
                   hint:'Bath taps. 100×300mm.' },
 };
 
@@ -726,8 +726,8 @@ function onMove(e) {
     dragCurrent = {gx: clamp(gx,0,COLS-1), gy: clamp(gy,0,ROWS-1)};
     render();
   } else if (isResizing && resizeItem && resizeStart) {
-    resizeItem.w = clamp(Math.round((resizeStart.origW + (gx - resizeStart.gx))*4)/4, 0.25, COLS - resizeItem.x);
-    resizeItem.h = clamp(Math.round((resizeStart.origH + (gy - resizeStart.gy))*4)/4, 0.25, ROWS - resizeItem.y);
+    resizeItem.w = clamp(Math.round(resizeStart.origW + (gx - resizeStart.gx)), 1, COLS - resizeItem.x);
+    resizeItem.h = clamp(Math.round(resizeStart.origH + (gy - resizeStart.gy)), 1, ROWS - resizeItem.y);
     // Keep canonical base dimensions in sync with current rotation
     if ((resizeItem.rotation || 0) % 2 === 0) {
       resizeItem.baseW = resizeItem.w;
@@ -744,8 +744,8 @@ function onMove(e) {
     const dx = gx - dragStart.gx, dy = gy - dragStart.gy;
     if (!dx && !dy) return;
     dragStart = {gx, gy};
-    it.x = clamp(Math.round((it.x + dx)*4)/4, 0, COLS - it.w);
-    it.y = clamp(Math.round((it.y + dy)*4)/4, 0, ROWS - it.h);
+    it.x = clamp(Math.round(it.x + dx), 0, COLS - it.w);
+    it.y = clamp(Math.round(it.y + dy), 0, ROWS - it.h);
     render();
   }
 }
@@ -839,9 +839,9 @@ function updateDims() {
   const maxY = Math.max(...rooms.map(r => r.y + r.h));
   // Total area = sum of individual sections (may overlap slightly but good enough on site)
   const totalArea = rooms.reduce((sum, r) => sum + r.w * r.h * 0.01, 0);
-  document.getElementById('dimW').textContent = ((maxX - minX) * 100).toFixed(0) + 'mm';
-  document.getElementById('dimH').textContent = ((maxY - minY) * 100).toFixed(0) + 'mm';
-  const areaM2 = rooms.reduce((sum, r) => sum + r.w * r.h * 0.01, 0);
+  document.getElementById('dimW').textContent = ((maxX - minX) * 20).toFixed(0) + 'mm';
+  document.getElementById('dimH').textContent = ((maxY - minY) * 20).toFixed(0) + 'mm';
+  const areaM2 = rooms.reduce((sum, r) => sum + r.w * r.h * 20 * 20 / 1e6, 0);
   document.getElementById('dimA').textContent = areaM2.toFixed(2) + 'm²';
 }
 
@@ -864,18 +864,18 @@ function drawGrid() {
   // Fine grid lines
   for (let c = 0; c <= COLS; c++) {
     ctx.beginPath(); ctx.moveTo(c*CELL+0.5, 0); ctx.lineTo(c*CELL+0.5, ROWS*CELL);
-    ctx.strokeStyle = c%10===0 ? '#3a4060' : (c%5===0 ? '#272b40' : '#1e2235');
-    ctx.lineWidth = c%10===0 ? 1 : 0.5; ctx.stroke();
+    ctx.strokeStyle = c%50===0 ? '#3a4060' : (c%5===0 ? '#212538' : '#191c2b');
+    ctx.lineWidth = c%50===0 ? 1 : 0.5; ctx.stroke();
   }
   for (let r = 0; r <= ROWS; r++) {
     ctx.beginPath(); ctx.moveTo(0, r*CELL+0.5); ctx.lineTo(COLS*CELL, r*CELL+0.5);
-    ctx.strokeStyle = r%10===0 ? '#3a4060' : (r%5===0 ? '#272b40' : '#1e2235');
-    ctx.lineWidth = r%10===0 ? 1 : 0.5; ctx.stroke();
+    ctx.strokeStyle = r%50===0 ? '#3a4060' : (r%5===0 ? '#212538' : '#191c2b');
+    ctx.lineWidth = r%50===0 ? 1 : 0.5; ctx.stroke();
   }
   // No background axis labels — room outline shows its own dimensions
 
   // Usable area border — soft dashed rect showing where to draw
-  const m = 3;
+  const m = 15;
   ctx.strokeStyle = 'rgba(79,142,247,0.18)';
   ctx.lineWidth = 1.5;
   ctx.setLineDash([6, 5]);
@@ -886,7 +886,7 @@ function drawGrid() {
   ctx.fillStyle = 'rgba(79,142,247,0.35)';
   ctx.font = '10px DM Mono, monospace';
   ctx.textAlign = 'left';
-  ctx.fillText('4m × 4m', m*CELL + 6, m*CELL + 13);
+  ctx.fillText('4m × 4m', m*CELL + 8, m*CELL + 10);
 
   // Compass rose — top-right of usable area
   drawCompassLabels();
@@ -895,7 +895,7 @@ function drawGrid() {
 function drawCompassLabels() {
   // Bold N/S/E/W labels outside the usable drawing area on each edge
   ctx.save();
-  const m = 3; // margin cells
+  const m = 15; // margin cells (15 × 20mm = 300mm)
   const usableL = m * CELL, usableR = (COLS-m) * CELL;
   const usableT = m * CELL, usableB = (ROWS-m) * CELL;
   const midX = (usableL + usableR) / 2;
@@ -1023,9 +1023,9 @@ function drawRoom() {
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 11px DM Sans, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText((w*0.1).toFixed(2)+'m', px+pw/2, py-4);
+    ctx.fillText((w*20/1000).toFixed(2)+'m', px+pw/2, py-4);
     ctx.save(); ctx.translate(px-7, py+ph/2); ctx.rotate(-Math.PI/2);
-    ctx.fillText((h*0.1).toFixed(2)+'m', 0, 0); ctx.restore();
+    ctx.fillText((h*20/1000).toFixed(2)+'m', 0, 0); ctx.restore();
     // Section number badge for multi-section rooms
     if (rooms.length > 1) {
       ctx.fillStyle = 'rgba(79,142,247,0.7)';
@@ -1046,7 +1046,7 @@ function drawDragPreview() {
   ctx.strokeRect(x1,y1,x2-x1,y2-y1); ctx.setLineDash([]);
   if (dw>0 && dh>0) {
     ctx.fillStyle='#ffffff'; ctx.font='bold 11px DM Mono, monospace'; ctx.textAlign='center';
-    ctx.fillText(`${(dw*100).toFixed(0)}mm × ${(dh*100).toFixed(0)}mm`, x1+(x2-x1)/2, y1+(y2-y1)/2);
+    ctx.fillText(`${(dw*20).toFixed(0)}mm × ${(dh*20).toFixed(0)}mm`, x1+(x2-x1)/2, y1+(y2-y1)/2);
   }
 }
 
@@ -1451,7 +1451,7 @@ function exportPDF() {
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 31 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 32 — if you can see this in Notepad, you have the right file -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -1650,10 +1650,10 @@ function calcPanels() {
 
   const minX=Math.min(...rooms.map(r=>r.x)), minY=Math.min(...rooms.map(r=>r.y));
   const maxX=Math.max(...rooms.map(r=>r.x+r.w)), maxY=Math.max(...rooms.map(r=>r.y+r.h));
-  const roomWmm = (maxX-minX)*100;
-  const roomDmm = (maxY-minY)*100;
+  const roomWmm = (maxX-minX)*20;
+  const roomDmm = (maxY-minY)*20;
   const wallW   = { north:roomWmm, south:roomWmm, east:roomDmm, west:roomDmm };
-  const floorArea = rooms.reduce((sum,r) => sum + (r.w*r.h*100*100)/1e6, 0);
+  const floorArea = rooms.reduce((sum,r) => sum + (r.w*r.h*20*20)/1e6, 0);
 
   // ── WALL RESULTS ──
   let wHtml = '<div class="panel-type">';
@@ -1753,3 +1753,4 @@ render();
 </script>
 </body>
 </html>
+
