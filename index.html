@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 32a — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 35 — if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -791,21 +791,24 @@ function updateSelectedPanel() {
   const def = FIXTURE_DEFS[it.type];
   panel.classList.add('visible');
   document.getElementById('selectedTitle').textContent = def.label;
-  document.getElementById('sizeW').value = it.w * 100;
-  document.getElementById('sizeH').value = it.h * 100;
+  document.getElementById('sizeW').value = it.w * 20;
+  document.getElementById('sizeH').value = it.h * 20;
   document.getElementById('sizeHint').textContent = '';
   document.getElementById('hintText').textContent = def.hint || '';
 }
 
 function resizeSelected() {
   const it = safeItem(); if (!it) return;
-  const mmW = parseInt(document.getElementById('sizeW').value) || 100;
-  const mmH = parseInt(document.getElementById('sizeH').value) || 100;
-  it.w = clamp(Math.round(mmW / 100), 1, COLS - it.x);
-  it.h = clamp(Math.round(mmH / 100), 1, ROWS - it.y);
+  const mmW = parseInt(document.getElementById('sizeW').value) || 20;
+  const mmH = parseInt(document.getElementById('sizeH').value) || 20;
+  it.w = clamp(Math.max(1, Math.round(mmW / 20)), 1, COLS - it.x);
+  it.h = clamp(Math.max(1, Math.round(mmH / 20)), 1, ROWS - it.y);
   // Keep base dimensions aligned with current rotation
   if ((it.rotation || 0) % 2 === 0) { it.baseW = it.w; it.baseH = it.h; }
   else { it.baseW = it.h; it.baseH = it.w; }
+  // Update display to show corrected mm value
+  document.getElementById('sizeW').value = it.w * 20;
+  document.getElementById('sizeH').value = it.h * 20;
   render();
 }
 
@@ -1451,7 +1454,7 @@ function exportPDF() {
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 32 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 35 — if you can see this in Notepad, you have the right file -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -1753,4 +1756,3 @@ render();
 </script>
 </body>
 </html>
-
