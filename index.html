@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 35 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 36 — if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1415,6 +1415,45 @@ function exportPDF() {
   const aText = document.getElementById('dimA').textContent;
   const notesText = notes.length ? notes.map(n => '• ' + n.text).join('<br>') : 'None';
 
+  // Panel calculator summary for PDF
+  const panelChoice = document.getElementById('panelChoice');
+  const wallPanel = PANEL_TYPES[panelChoice ? parseInt(panelChoice.value) : 0];
+  const ceilH = parseInt(document.getElementById('ceilingHeight').value) || 2400;
+  const floorSel = document.getElementById('floorChoice');
+  const floorTypePdf = FLOOR_TYPES[floorSel ? parseInt(floorSel.value) : 0];
+
+  const minXp=Math.min(...rooms.map(r=>r.x)), minYp=Math.min(...rooms.map(r=>r.y));
+  const maxXp=Math.max(...rooms.map(r=>r.x+r.w)), maxYp=Math.max(...rooms.map(r=>r.y+r.h));
+  const roomWmmp=(maxXp-minXp)*20, roomDmmp=(maxYp-minYp)*20;
+  const wallWp={north:roomWmmp,south:roomWmmp,east:roomDmmp,west:roomDmmp};
+  const floorAreaPdf=rooms.reduce((sum,r)=>sum+(r.w*r.h*20*20)/1e6,0);
+
+  // Wall panels
+  let wallPanelRows = '';
+  if (rooms.length) {
+    if (wallPanel.sqmPerPack) {
+      let totalWallArea=0;
+      ['north','south','east','west'].forEach(w=>{ if(wallActive[w]) totalWallArea+=(wallWp[w]/1000)*(ceilH/1000); });
+      const wastedArea=totalWallArea*(1+wallPanel.waste);
+      const packs=Math.ceil(wastedArea/wallPanel.sqmPerPack);
+      wallPanelRows = `<tr><td>${wallPanel.name}</td><td class="val">${packs} pack${packs!==1?'s':''}</td></tr>
+        <tr><td style="color:#888;font-size:9px">Wall area (inc. ${wallPanel.waste*100}% waste)</td><td class="val" style="font-size:9px">${wastedArea.toFixed(2)}m²</td></tr>`;
+    } else {
+      let wallTotal=0;
+      ['north','south','east','west'].forEach(w=>{ if(wallActive[w]) wallTotal+=Math.ceil(wallWp[w]/wallPanel.pw); });
+      const packs=Math.ceil(wallTotal/wallPanel.packSize);
+      wallPanelRows = `<tr><td>${wallPanel.name}</td><td class="val">${packs} pack${packs!==1?'s':''} / ${wallTotal} panels</td></tr>`;
+    }
+    // Ceiling
+    const ceilPacks=Math.ceil(floorAreaPdf/CEIL_SQM_PER_PACK);
+    wallPanelRows += `<tr><td>Ceiling (2.7m²/pk)</td><td class="val">${ceilPacks} pack${ceilPacks!==1?'s':''}</td></tr>`;
+    // Floor
+    const rawFloor=floorAreaPdf*(1+floorTypePdf.waste);
+    const floorPacks=Math.ceil(rawFloor/floorTypePdf.sqmPerPack);
+    wallPanelRows += `<tr><td>Floor — ${floorTypePdf.name}</td><td class="val">${floorPacks} pack${floorPacks!==1?'s':''}</td></tr>`;
+    if (floorTypePdf.waste>0) wallPanelRows += `<tr><td style="color:#888;font-size:9px">Inc. ${floorTypePdf.waste*100}% wastage</td><td class="val" style="font-size:9px">${rawFloor.toFixed(2)}m²</td></tr>`;
+  }
+
   // Crop canvas to just the drawn area with a small padding
   let minX = COLS, minY = ROWS, maxX = 0, maxY = 0;
   rooms.forEach(r => {
@@ -1426,7 +1465,7 @@ function exportPDF() {
     maxX = Math.max(maxX, it.x + it.w); maxY = Math.max(maxY, it.y + it.h);
   });
   if (!rooms.length) { minX=0; minY=0; maxX=COLS; maxY=ROWS; }
-  const pad = 3;
+  const pad = 12; // extra left/top padding to include dimension labels
   minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
   maxX = Math.min(COLS, maxX + pad); maxY = Math.min(ROWS, maxY + pad);
 
@@ -1454,7 +1493,7 @@ function exportPDF() {
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 35 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 36 — if you can see this in Notepad, you have the right file -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -1486,7 +1525,7 @@ function exportPDF() {
   .drawing img { max-width:100%; max-height:100%; object-fit:contain; display:block; }
 
   /* INFO PANEL */
-  .info { width:190px; flex-shrink:0; display:flex; flex-direction:column; gap:12px; }
+  .info { width:210px; flex-shrink:0; display:flex; flex-direction:column; gap:12px; }
   .section-title { font-size:9px; font-weight:700; letter-spacing:0.12em;
     text-transform:uppercase; color:#4f8ef7; padding-bottom:4px;
     border-bottom:1.5px solid #dde8ff; margin-bottom:4px; }
@@ -1528,6 +1567,10 @@ function exportPDF() {
     <div>
       <div class="section-title">Fixture Schedule</div>
       <table>${fixtureRows || '<tr><td colspan="2" style="color:#aaa">None placed</td></tr>'}</table>
+    </div>
+    <div>
+      <div class="section-title">Panel Schedule</div>
+      <table>${wallPanelRows || '<tr><td colspan="2" style="color:#aaa">No room drawn</td></tr>'}</table>
     </div>
     <div>
       <div class="section-title">Notes</div>
