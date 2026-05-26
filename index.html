@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 38 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 42 — if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -134,6 +134,8 @@
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
+  #logoCanvas { image-rendering: crisp-edges; }
+
   /* ── TABLET RESPONSIVE ── */
 
   /* Hamburger toggle button — hidden on desktop */
@@ -217,7 +219,7 @@
 
 <header>
   <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Menu">☰</button>
-  <div class="logo">ANNICK // SURVEY</div>
+  <canvas id="logoCanvas" width="180" height="32" style="display:block;cursor:default;"></canvas>
   <div class="job-info">
     <input type="text" id="jobId" placeholder="Job ID" maxlength="20">
     <input type="text" id="customerName" placeholder="Customer name" maxlength="30">
@@ -271,7 +273,7 @@
         <span>mm</span>
       </div>
       <div class="size-hint" id="sizeHint" style="display:none"></div>
-      <button class="btn rotate-btn" onclick="rotateSelected()">↻ Rotate 90°</button>
+      <button class="btn rotate-btn" id="rotateBtnLabel" onclick="rotateSelected()">↻ Rotate 90°</button>
       <button class="btn danger" style="width:100%;margin-top:6px;font-size:11px;" onclick="deleteSelected()">Delete fixture</button>
     </div>
 
@@ -498,8 +500,8 @@ const FIXTURE_DEFS = {
                   hint:'Freestanding storage. Adjust to match dimensions.' },
   window:       { w:60,  h:10,  label:'Window',       color:'#a0e0ff', shape:'window',
                   hint:'Rotate to place on side walls.' },
-  door:         { w:80,  h:80,  label:'Door',         color:'#f7a04f', shape:'door',
-                  hint:'Rotate to change which wall and swing direction.' },
+  door:         { w:60,  h:20,  label:'Door',         color:'#f7a04f', shape:'door',
+                  hint:'R cycles swing direction (NE/NW/SW/SE). Rotate item to place on any wall.' },
   towelrail:    { w:30,  h:5,  label:'Towel Rail',   color:'#f74f8e', shape:'rail',
                   hint:'Default 300×100mm. Rotate to place vertically.' },
   radiator:     { w:50,  h:4,  label:'Radiator',     color:'#f76a4f', shape:'radiator',
@@ -673,7 +675,8 @@ function onDown(e) {
       x: ix, y: iy,
       w: d.w, h: d.h,
       rotation: 0,
-      baseW: d.w, baseH: d.h
+      baseW: d.w, baseH: d.h,
+      swingDir: 0
     });
     // Auto-select the newly placed item so Shaun can drag it immediately
     selectedIdx = items.length - 1;
@@ -791,6 +794,9 @@ function updateSelectedPanel() {
   const def = FIXTURE_DEFS[it.type];
   panel.classList.add('visible');
   document.getElementById('selectedTitle').textContent = def.label;
+  // Update rotate button label for doors
+  const rotBtn = document.getElementById('rotateBtnLabel');
+  if (rotBtn) rotBtn.textContent = it.type === 'door' ? '↻ Cycle Swing Direction' : '↻ Rotate 90°';
   document.getElementById('sizeW').value = it.w * 10;
   document.getElementById('sizeH').value = it.h * 10;
   document.getElementById('sizeHint').textContent = '';
@@ -868,6 +874,7 @@ function render() {
   const validSel = (selectedIdx !== null && selectedIdx >= 0 && selectedIdx < items.length) ? selectedIdx : -1;
   items.forEach((item, i) => drawFixture(item, i === validSel));
   notes.forEach(n => drawNote(n));
+  if (validSel >= 0) drawDimensionLines(items[validSel]);
 }
 
 function drawGrid() {
@@ -1261,12 +1268,47 @@ function drawFixture(item, selected) {
     ctx.setLineDash([]);
 
   } else if (def.shape==='door') {
-    // Hinge top-left, arc sweeps clockwise into room
-    ctx.lineWidth=2;
-    ctx.beginPath(); ctx.moveTo(-hw+3,-hh+3); ctx.lineTo(hw-3,-hh+3); ctx.stroke();
-    ctx.lineWidth=1; ctx.setLineDash([3,3]);
-    ctx.beginPath(); ctx.arc(-hw+3,-hh+3,(hw*2-6),0,Math.PI/2); ctx.stroke();
+    // Door as rectangle with directional swing arrow
+    // swingDir: 0=NE, 1=NW, 2=SW, 3=SE
+    const swingDir = item.swingDir || 0;
+
+    // Door frame — solid lines on three sides, open side dashed
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = col;
+    // All four sides solid for the frame
+    ctx.beginPath(); ctx.roundRect(-hw+3,-hh+3,hw*2-6,hh*2-6,2); ctx.stroke();
+
+    // Diagonal swing arrow
+    // Arrow goes from one corner to the opposite, direction based on swingDir
+    const corners = [
+      { from:[-hw+6,-hh+6], to:[hw-6, hh-6] },  // 0: NW->SE (arrow points SE)
+      { from:[hw-6, -hh+6], to:[-hw+6, hh-6] },  // 1: NE->SW (arrow points SW)
+      { from:[hw-6,  hh-6], to:[-hw+6,-hh+6] },  // 2: SE->NW (arrow points NW)
+      { from:[-hw+6, hh-6], to:[hw-6, -hh+6] },  // 3: SW->NE (arrow points NE)
+    ];
+    const dir = corners[swingDir];
+    const fx=dir.from[0], fy=dir.from[1], tx=dir.to[0], ty=dir.to[1];
+
+    ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(fx,fy); ctx.lineTo(tx,ty); ctx.stroke();
     ctx.setLineDash([]);
+
+    // Arrowhead at end point
+    const angle = Math.atan2(ty-fy, tx-fx);
+    const aLen = 8;
+    ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(tx, ty);
+    ctx.lineTo(tx - aLen*Math.cos(angle-0.4), ty - aLen*Math.sin(angle-0.4));
+    ctx.moveTo(tx, ty);
+    ctx.lineTo(tx - aLen*Math.cos(angle+0.4), ty - aLen*Math.sin(angle+0.4));
+    ctx.stroke();
+
+    // Small swing direction label
+    const swingLabels = ['→↑','←↑','←↓','→↓'];
+    ctx.font='bold 9px DM Sans,sans-serif';
+    ctx.fillStyle=col; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(swingLabels[swingDir], 0, 0);
 
   } else if (def.shape==='rail') {
     const railLen=hw*2-8;
@@ -1343,6 +1385,118 @@ function drawFixture(item, selected) {
   ctx.restore();
 }
 
+
+
+// Draw dimension lines showing distance from selected window/door to nearest room walls
+function drawDimensionLines(item) {
+  if (!item || !rooms.length) return;
+  if (!['window','door'].includes(item.type)) return;
+
+  // Find the room section this item sits in (or nearest one)
+  let room = rooms[0];
+  rooms.forEach(r => {
+    if (item.x >= r.x && item.x < r.x + r.w &&
+        item.y >= r.y && item.y < r.y + r.h) room = r;
+  });
+
+  const px = item.x * CELL, py = item.y * CELL;
+  const pw = item.w * CELL, ph = item.h * CELL;
+  const rpx = room.x * CELL, rpy = room.y * CELL;
+  const rpw = room.w * CELL, rph = room.h * CELL;
+
+  // Distances in cells
+  const dLeft   = item.x - room.x;
+  const dRight  = (room.x + room.w) - (item.x + item.w);
+  const dTop    = item.y - room.y;
+  const dBottom = (room.y + room.h) - (item.y + item.h);
+
+  // Convert to mm
+  const mmLeft   = dLeft   * 10;
+  const mmRight  = dRight  * 10;
+  const mmTop    = dTop    * 10;
+  const mmBottom = dBottom * 10;
+
+  ctx.save();
+
+  // Determine orientation — window/door on horizontal wall (h > w) or vertical wall (w > h)
+  const isHoriz = item.w >= item.h; // item runs left-right
+
+  const OFFSET = 14; // px offset from item edge for line
+  const TICK = 5;    // tick mark length
+  const COL = '#f7c94f';
+
+  ctx.strokeStyle = COL;
+  ctx.fillStyle = COL;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  ctx.font = 'bold 10px DM Sans, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  function drawDimLine(x1, y1, x2, y2, label, tickH, side) {
+    // Main dimension line
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    // Ticks at each end
+    if (tickH) {
+      ctx.beginPath(); ctx.moveTo(x1 - TICK, y1); ctx.lineTo(x1 + TICK, y1); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x2 - TICK, y2); ctx.lineTo(x2 + TICK, y2); ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.moveTo(x1, y1 - TICK); ctx.lineTo(x1, y1 + TICK); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x2, y2 - TICK); ctx.lineTo(x2, y2 + TICK); ctx.stroke();
+    }
+    // Label with pill background
+    ctx.setLineDash([]);
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    const tw = ctx.measureText(label).width;
+    ctx.fillStyle = 'rgba(15,17,23,0.8)';
+    ctx.beginPath(); ctx.roundRect(mx - tw/2 - 3, my - 7, tw + 6, 14, 3); ctx.fill();
+    ctx.fillStyle = COL;
+    ctx.fillText(label, mx, my);
+    ctx.setLineDash([3, 3]);
+    ctx.fillStyle = COL;
+  }
+
+  if (isHoriz) {
+    // Horizontal item (on top/bottom wall) — show left and right distances
+    const lineY = py + ph / 2; // run lines through middle of item
+
+    if (dLeft > 0) {
+      drawDimLine(rpx, lineY, px, lineY, mmLeft + 'mm', false, 'left');
+    }
+    if (dRight > 0) {
+      drawDimLine(px + pw, lineY, rpx + rpw, lineY, mmRight + 'mm', false, 'right');
+    }
+    // Also show item width
+    const labelY = py - OFFSET;
+    drawDimLine(px, labelY, px + pw, labelY, (item.w * 10) + 'mm', true, 'top');
+  } else {
+    // Vertical item (on left/right wall) — show top and bottom distances
+    const lineX = px + pw / 2;
+
+    if (dTop > 0) {
+      drawDimLine(lineX, rpy, lineX, py, mmTop + 'mm', true, 'top');
+    }
+    if (dBottom > 0) {
+      drawDimLine(lineX, py + ph, lineX, rpy + rph, mmBottom + 'mm', true, 'bottom');
+    }
+    // Also show item height
+    const labelX = px - OFFSET;
+    ctx.save();
+    ctx.translate(labelX, py + ph/2);
+    ctx.rotate(-Math.PI/2);
+    ctx.setLineDash([]);
+    const tw = ctx.measureText((item.h*10)+'mm').width;
+    ctx.fillStyle = 'rgba(15,17,23,0.8)';
+    ctx.beginPath(); ctx.roundRect(-tw/2-3,-7,tw+6,14,3); ctx.fill();
+    ctx.fillStyle = COL;
+    ctx.fillText((item.h*10)+'mm', 0, 0);
+    ctx.restore();
+    ctx.setLineDash([3,3]);
+    drawDimLine(labelX, py, labelX, py+ph, '', true, 'left');
+  }
+
+  ctx.restore();
+}
 
 function drawNote(n) {
   const x=n.x*CELL+2, y=n.y*CELL+CELL/2;
@@ -1500,7 +1654,7 @@ function exportPDF() {
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 38 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 42 — if you can see this in Notepad, you have the right file -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -1803,6 +1957,128 @@ function closeSidebar() {
 // Set initial active state properly
 document.getElementById('tool-room').classList.add('active');
 render();
+
+// ── PAC-MAN LOGO ANIMATION ──
+(function() {
+  const lc = document.getElementById('logoCanvas');
+  const lx = lc.getContext('2d');
+  const TEXT = 'ANNICK // SURVEY';
+  const FONT = 'bold 13px DM Mono, monospace';
+  const TEXT_COL = '#4f8ef7';
+  const PAC_COL  = '#f7c94f';
+  const DOT_COL  = '#4f8ef7';
+  const W = lc.width, H = lc.height;
+
+  // Measure text
+  lx.font = FONT;
+  const textW = lx.measureText(TEXT).width;
+  const textX = 4, textY = H/2;
+
+  // Dots along the text
+  const DOT_SPACING = 7;
+  const numDots = Math.floor(textW / DOT_SPACING);
+  let dots = [];
+  for (let i = 0; i < numDots; i++) {
+    dots.push({ x: textX + i * DOT_SPACING + 4, eaten: false });
+  }
+
+  let pacX = -16;  // starts off left edge
+  let mouth = 0;
+  let mouthDir = 1;
+  let animDone = false;
+  let frameCount = 0;
+  let restartTimer = null;
+
+  function drawFrame() {
+    lx.clearRect(0, 0, W, H);
+
+    if (animDone) {
+      // Just draw static logo text
+      lx.font = FONT;
+      lx.fillStyle = TEXT_COL;
+      lx.textAlign = 'left';
+      lx.textBaseline = 'middle';
+      lx.fillText(TEXT, textX, textY);
+      return;
+    }
+
+    // Draw remaining dots
+    dots.forEach(d => {
+      if (!d.eaten) {
+        lx.beginPath();
+        lx.arc(d.x, textY, 2, 0, Math.PI * 2);
+        lx.fillStyle = DOT_COL;
+        lx.fill();
+      }
+    });
+
+    // Draw text revealed behind pac-man (eaten portion)
+    lx.save();
+    lx.beginPath();
+    lx.rect(textX, 0, Math.max(0, pacX - 6), H);
+    lx.clip();
+    lx.font = FONT;
+    lx.fillStyle = TEXT_COL;
+    lx.textAlign = 'left';
+    lx.textBaseline = 'middle';
+    lx.fillText(TEXT, textX, textY);
+    lx.restore();
+
+    // Eat dots pac-man passes over
+    dots.forEach(d => {
+      if (!d.eaten && pacX >= d.x - 4) d.eaten = true;
+    });
+
+    // Pac-man mouth animation
+    mouth += 0.18 * mouthDir;
+    if (mouth > 0.28) mouthDir = -1;
+    if (mouth < 0.01) mouthDir = 1;
+
+    // Draw pac-man
+    lx.beginPath();
+    lx.moveTo(pacX, textY);
+    lx.arc(pacX, textY, 9, mouth * Math.PI, (2 - mouth) * Math.PI);
+    lx.closePath();
+    lx.fillStyle = PAC_COL;
+    lx.fill();
+
+    // Advance
+    pacX += 1.8;
+    frameCount++;
+
+    if (pacX > textX + textW + 20) {
+      animDone = true;
+      // Restart after 6 seconds
+      restartTimer = setTimeout(() => {
+        pacX = -16;
+        mouth = 0;
+        mouthDir = 1;
+        animDone = false;
+        frameCount = 0;
+        dots.forEach(d => d.eaten = false);
+        requestAnimationFrame(loop);
+      }, 6000);
+      drawFrame();
+      return;
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  function loop() { drawFrame(); }
+
+  // Kick off after a short delay so page loads first
+  setTimeout(() => requestAnimationFrame(loop), 400);
+
+  // Click to replay
+  lc.addEventListener('click', () => {
+    if (restartTimer) clearTimeout(restartTimer);
+    pacX = -16; mouth = 0; mouthDir = 1;
+    animDone = false; frameCount = 0;
+    dots.forEach(d => d.eaten = false);
+    requestAnimationFrame(loop);
+  });
+})();
 </script>
 </body>
 </html>
