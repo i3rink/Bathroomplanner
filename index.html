@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 54 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 56 — if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -197,7 +197,7 @@
   .chargeable-badge { font-size:10px; color:#f7c94f; font-weight:600; }
 
   /* Totals */
-  .totals-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+  .totals-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .total-card { background:var(--surface2); border:1px solid var(--border); border-radius:8px;
     padding:10px 14px; }
   .total-card .tc-label { font-size:10px; color:var(--text-dim); text-transform:uppercase;
@@ -883,11 +883,7 @@
           <div class="tc-value" id="total-fitter">£1,150</div>
           <div class="tc-sub">Base fee + uplifts</div>
         </div>
-        <div class="total-card">
-          <div class="tc-label">Annick Revenue</div>
-          <div class="tc-value" id="total-annick">£0</div>
-          <div class="tc-sub">From additional works only</div>
-        </div>
+
       </div>
     </div>
 
@@ -2134,7 +2130,7 @@ function exportPDF() {
   // Build works summary for PDF
   // Inline tier calc for PDF (avoids calling before definition)
   const _pkg = document.getElementById('spec-package')?.value || 'arran';
-  const _total = (typeof selectedRequired !== 'undefined' ? selectedRequired.size + selectedPlumbing.size + selectedJoinery.size : 0);
+  const _total = (typeof selectedPlumbing !== 'undefined' ? selectedPlumbing.size + selectedJoinery.size : 0); // Required works excluded from tier
   const _tiers = _pkg === 'arran' ? [{max:99,uplift:200}] : [{max:2,uplift:0},{max:4,uplift:100},{max:99,uplift:200}];
   const _tierFn = (n, t) => { for (const x of t) { if (n <= x.max) return x.uplift; } return t[t.length-1].uplift; };
   const combinedTieredForPdf = _total > 0 ? _tierFn(_total, _tiers) : 0;
@@ -2142,12 +2138,11 @@ function exportPDF() {
   selectedFixed.forEach(i => { fixedUp += FIXED_UPLIFTS[i].uplift; });
   const fitterUpliftTotal = combinedTieredForPdf + fixedUp;
   const fitterTotal = baseFee + fitterUpliftTotal;
-  const annickTotal = Math.round(fitterUpliftTotal * 0.5);
   const custTotal   = fitterUpliftTotal;
 
   // Build works rows
   let worksRowsArr = [];
-  selectedRequired.forEach(i => worksRowsArr.push({desc:REQUIRED_WORKS[i],cat:'Required',uplift:'(tiered)'}));
+  selectedRequired.forEach(i => worksRowsArr.push({desc:REQUIRED_WORKS[i],cat:'Required',uplift:'Info only'}));
   selectedPlumbing.forEach(i => worksRowsArr.push({desc:PLUMBING_REPOSITION[i],cat:'Plumbing',uplift:'(tiered)'}));
   selectedJoinery.forEach(i  => worksRowsArr.push({desc:JOINERY_ITEMS[i],cat:'Joinery',uplift:'(tiered)'}));
   selectedFixed.forEach(i    => worksRowsArr.push({desc:FIXED_UPLIFTS[i].label,cat:FIXED_UPLIFTS[i].cat,uplift:'£'+FIXED_UPLIFTS[i].uplift}));
@@ -2238,7 +2233,7 @@ function exportPDF() {
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 54 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 56 — if you can see this in Notepad, you have the right file -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -2367,7 +2362,7 @@ function exportPDF() {
         <tr><td style="color:#666;padding:2px 0;">Base fitting fee</td><td style="font-weight:600;text-align:right">£${baseFee.toLocaleString('en-GB')}</td></tr>
         <tr><td style="color:#666;padding:2px 0;">Additional works (customer)</td><td style="font-weight:600;text-align:right">£${custTotal.toLocaleString('en-GB')}</td></tr>
         <tr style="border-top:1px solid #eee;"><td style="color:#333;font-weight:700;padding-top:4px;">Fitter total</td><td style="font-weight:700;text-align:right;color:#4f8ef7;">£${fitterTotal.toLocaleString('en-GB')}</td></tr>
-        <tr><td style="color:#666;padding:2px 0;">Annick revenue (works)</td><td style="font-weight:600;text-align:right">£${annickTotal.toLocaleString('en-GB')}</td></tr>
+
       </table>
     </div>
   </div>
@@ -2679,7 +2674,9 @@ const FIXED_UPLIFTS = [
   { label:'Light Pull Cord/Switch',        cat:'Electrical', uplift:20 },
   { label:'Shower Pull Cord/Switch',       cat:'Electrical', uplift:20 },
   { label:'Shaver Socket',                 cat:'Electrical', uplift:20 },
-  { label:'Independent Mirror',            cat:'Electrical', uplift:30 },
+  { label:'Independent Mirror',            cat:'Electrical', uplift:30  },
+  // Additional
+  { label:'Twin Bathroom',                   cat:'Additional', uplift:300 },
 ];
 
 // State
@@ -2706,8 +2703,9 @@ const JOIN_TIERS  = COMBINED_TIERS_STANDARD;
 const PLUMB_TIERS = COMBINED_TIERS_STANDARD;
 
 function getCombinedTierUplift() {
+  // Required works are info only — tier applies to Plumbing + Joinery only
   const pkg = document.getElementById('spec-package')?.value || 'arran';
-  const totalTiered = selectedRequired.size + selectedPlumbing.size + selectedJoinery.size;
+  const totalTiered = selectedPlumbing.size + selectedJoinery.size;
   if (totalTiered === 0) return 0;
   const tiers = pkg === 'arran' ? COMBINED_TIERS_ARRAN : COMBINED_TIERS_STANDARD;
   return tieredUplift(totalTiered, tiers);
@@ -2740,8 +2738,8 @@ function updateTieredSummary(set, tiers, countId, upliftId) {
   document.getElementById(countId).textContent = n;
   // Show combined uplift on all three summary bars
   const combinedUplift = getCombinedTierUplift();
-  const total = selectedRequired.size + selectedPlumbing.size + selectedJoinery.size;
-  ['req-uplift','plumb-uplift','joinery-uplift'].forEach(id => {
+  const total = selectedPlumbing.size + selectedJoinery.size;
+  ['plumb-uplift','joinery-uplift'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = total > 0 ? '£' + combinedUplift + ' combined' : '£0';
   });
@@ -2774,13 +2772,8 @@ function updateSpecTotals() {
 
   const totalFitterUplift = reqUplift + plumbUplift + joinUplift + fixedUplift;
   const fitterTotal = baseFee + totalFitterUplift;
-  // Annick split TBC — placeholder 50% of uplift
-  const annickTotal = Math.round(totalFitterUplift * 0.5);
-  const custTotal   = totalFitterUplift;
-
-  document.getElementById('total-customer').textContent = '£' + custTotal.toLocaleString('en-GB');
+  document.getElementById('total-customer').textContent = '£' + totalFitterUplift.toLocaleString('en-GB');
   document.getElementById('total-fitter').textContent   = '£' + fitterTotal.toLocaleString('en-GB');
-  document.getElementById('total-annick').textContent   = '£' + annickTotal.toLocaleString('en-GB');
 }
 
 // Initialise all lists
