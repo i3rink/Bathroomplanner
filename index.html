@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 51 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 52 — if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -134,7 +134,7 @@
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-  #logoCanvas { image-rendering: crisp-edges; }
+  #logoCanvas { image-rendering: crisp-edges; background: #1a1d27; }
 
   /* ── TABS ── */
   .tab-bar { display:flex; gap:0; background:var(--surface); border-bottom:1px solid var(--border);
@@ -2233,7 +2233,7 @@ function exportPDF() {
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 51 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 52 — if you can see this in Notepad, you have the right file -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -2858,9 +2858,12 @@ document.fonts.ready.then(() => {
   }
 
   function drawFrame() {
-    lx.clearRect(0, 0, W, H);
+    lx.fillStyle = '#1a1d27';
+    lx.fillRect(0, 0, W, H);
 
     if (animDone) {
+      lx.fillStyle = '#1a1d27';
+      lx.fillRect(0, 0, W, H);
       lx.font = FONT;
       lx.fillStyle = TEXT_COL;
       lx.textAlign = 'left';
