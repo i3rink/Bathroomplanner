@@ -831,12 +831,13 @@
     <!-- Additional Works - Required Items (multi-select tiered) -->
     <div class="spec-section">
       <div class="spec-section-title">Required Works
-        <span style="font-size:10px;color:var(--text-dim);font-weight:400;margin-left:8px;">Tiered across all works - up to 2 free*, 3-4 = £100, 5+ = £200. *Arran: all chargeable</span>
+        <span style="font-size:10px;color:var(--text-dim);font-weight:400;margin-left:8px;">Tiered across all works - up to 2 free*, 3-4 = £100, 5+ = £200. </span>
       </div>
       <div id="required-works-list" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;"></div>
       <div style="display:flex;align-items:center;gap:16px;padding:8px 10px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);">
         <span style="font-size:11px;color:var(--text-dim);">Selected: <strong id="req-count" style="color:var(--text)">0</strong></span>
-        </div>
+        <span style="font-size:11px;color:var(--text-dim);">Fitter uplift: <strong id="req-uplift" style="color:var(--accent)">£0</strong></span>
+      </div>
     </div>
 
     <!-- Plumbing Reposition (multi-select tiered) -->
@@ -2120,11 +2121,9 @@ function exportPDF() {
 
   // Build works summary for PDF
   // Inline tier calc for PDF (avoids calling before definition)
-  const _pkg = document.getElementById('spec-package')?.value || 'arran';
-  const _total = (typeof selectedPlumbing !== 'undefined' ? selectedPlumbing.size + selectedJoinery.size : 0); // Required works excluded from tier
-  const _tiers = _pkg === 'arran' ? [{max:99,uplift:200}] : [{max:2,uplift:0},{max:4,uplift:100},{max:99,uplift:200}];
+  const _total = (typeof selectedPlumbing !== 'undefined' ? selectedPlumbing.size + selectedJoinery.size : 0);
   const _tierFn = (n, t) => { for (const x of t) { if (n <= x.max) return x.uplift; } return t[t.length-1].uplift; };
-  const combinedTieredForPdf = _total > 0 ? _tierFn(_total, _tiers) : 0;
+  const combinedTieredForPdf = _tierFn(_total, [{max:2,uplift:0},{max:4,uplift:100},{max:99,uplift:200}]);
   let fixedUp = 0;
   selectedFixed.forEach(i => { fixedUp += FIXED_UPLIFTS[i].uplift; });
   const fitterUpliftTotal = combinedTieredForPdf + fixedUp;
@@ -2696,14 +2695,13 @@ function tieredUplift(count, tiers) {
 }
 
 // Combined tiered uplift across ALL tiered categories (not per category)
-// Arran: all chargeable - no free tier
+//  - no free tier
 // Other packages: up to 2 free, 3-4=£100, 5+=£200
-const COMBINED_TIERS_STANDARD = [{max:2,uplift:0},{max:4,uplift:100},{max:99,uplift:200}];
-const COMBINED_TIERS_ARRAN    = [{max:99,uplift:200}];
-// Aliases kept for buildCheckList compatibility
-const REQ_TIERS   = COMBINED_TIERS_STANDARD;
-const JOIN_TIERS  = COMBINED_TIERS_STANDARD;
-const PLUMB_TIERS = COMBINED_TIERS_STANDARD;
+// Tier: 0-2 free, 3-4 = £100, 5+ = £200 — same for all packages
+const COMBINED_TIERS = [{max:2,uplift:0},{max:4,uplift:100},{max:99,uplift:200}];
+const REQ_TIERS   = COMBINED_TIERS;
+const JOIN_TIERS  = COMBINED_TIERS;
+const PLUMB_TIERS = COMBINED_TIERS;
 
 function getCombinedTierUplift() {
   // Required works are info only - tier applies to Plumbing + Joinery only
@@ -2769,12 +2767,11 @@ function updateSpecTotals() {
   const pkg2 = document.getElementById('spec-package')?.value || 'arran';
   const baseFee = PACKAGE_FEES[pkg2] || 1150;
 
-  // These are now handled by combined tier - kept for compatibility
-  const reqUplift = 0, plumbUplift = 0, joinUplift = 0;
-  let fixedUplift   = 0;
+  const combinedTieredUplift = getCombinedTierUplift(); // plumbing + joinery combined tier
+  let fixedUplift = 0;
   selectedFixed.forEach(i => { fixedUplift += FIXED_UPLIFTS[i].uplift; });
 
-  const totalFitterUplift = reqUplift + plumbUplift + joinUplift + fixedUplift;
+  const totalFitterUplift = combinedTieredUplift + fixedUplift;
   const fitterTotal = baseFee + totalFitterUplift;
 
   document.getElementById('total-fitter').textContent   = '£' + fitterTotal.toLocaleString('en-GB');
