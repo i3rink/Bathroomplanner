@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL - VERSION 64 - if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL - VERSION 65 - if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1360,7 +1360,8 @@ function render() {
   const validSel = (selectedIdx !== null && selectedIdx >= 0 && selectedIdx < items.length) ? selectedIdx : -1;
   items.forEach((item, i) => drawFixture(item, i === validSel));
   notes.forEach((n, i) => drawNote(n, i === selectedNote));
-  if (validSel >= 0) drawDimensionLines(items[validSel]);
+  // Always show dimension lines for every window/door so selecting one doesn't hide another's measurements
+  items.forEach(item => { if (item.type === 'window' || item.type === 'door') drawDimensionLines(item); });
 }
 
 function drawGrid() {
@@ -2253,9 +2254,16 @@ function exportPDF() {
   cropCtx.drawImage(offscreen, cropX, cropY, cropW, cropH, 0, 0, cropW * SCALE, cropH * SCALE);
   const imgData = crop.toDataURL('image/png');
 
+  // Display size: scale drawing to a fixed width that fills the page, height follows aspect ratio.
+  // This is the explicit-pixel approach that worked before the object-fit regression.
+  const DISP_W = 760;
+  const aspect = cropH / cropW;
+  const dispW = DISP_W;
+  const dispH = Math.round(DISP_W * aspect);
+
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL - VERSION 64 - if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL - VERSION 65 - if you can see this in Notepad, you have the right file -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -2279,12 +2287,12 @@ function exportPDF() {
   .hd-field .val { font-size:13px; font-weight:700; color:#222; }
 
   /* BODY */
-  .body { display:flex; gap:16px; flex:1; min-height:0; height:165mm; }
+  .body { display:flex; gap:16px; align-items:flex-start; }
 
   /* DRAWING - takes up most of the space */
-  .drawing { flex:1; min-height:0; display:flex; align-items:center; justify-content:center;
+  .drawing { flex:1; display:flex; align-items:flex-start; justify-content:center;
     border:1px solid #e0e4f0; border-radius:4px; overflow:hidden; background:#0f1117; padding:6px; }
-  .drawing img { width:100%; height:100%; max-width:100%; max-height:100%; object-fit:contain; display:block; }
+  .drawing img { display:block; border-radius:2px; }
 
   /* INFO PANEL */
   .info { width:210px; flex-shrink:0; display:flex; flex-direction:column; gap:12px; }
@@ -2316,7 +2324,7 @@ function exportPDF() {
 </div>
 
 <div class="body">
-  <div class="drawing"><img src="${imgData}"/></div>
+  <div class="drawing"><img src="${imgData}" style="width:${dispW}px;height:${dispH}px;max-width:100%;object-fit:contain;"/></div>
   <div class="info">
     <div>
       <div class="section-title">Room Dimensions</div>
@@ -2993,3 +3001,4 @@ render();
 </script>
 </body>
 </html>
+
