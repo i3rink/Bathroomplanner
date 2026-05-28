@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL - VERSION 56 - if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL - VERSION 58 - if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -830,18 +830,14 @@
 
     <!-- Additional Works - Required Items (multi-select tiered) -->
     <div class="spec-section">
-      <div class="spec-section-title">Required Works
-        <span style="font-size:10px;color:var(--text-dim);font-weight:400;margin-left:8px;">Tiered across all works - up to 2 free*, 3-4 = £100, 5+ = £200. </span>
-      </div>
+      <div class="spec-section-title">Required Works</div>
       <div id="required-works-list" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;"></div>
-      <div style="display:flex;align-items:center;gap:16px;padding:8px 10px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);">
-        </div>
     </div>
 
     <!-- Plumbing Reposition (multi-select tiered) -->
     <div class="spec-section">
       <div class="spec-section-title">Plumbing - Reposition
-        
+        <span style="font-size:10px;color:var(--text-dim);font-weight:400;margin-left:8px;">Tiered across all works - up to 2 free*, 3-4 = £100, 5+ = £200. </span>
       </div>
       <div id="plumbing-reposition-list" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;"></div>
 <span id="plumb-count" style="display:none">0</span><span id="plumb-uplift" style="display:none">£0</span>
@@ -850,7 +846,7 @@
     <!-- Joinery (multi-select tiered) -->
     <div class="spec-section">
       <div class="spec-section-title">Joinery
-        
+        <span style="font-size:10px;color:var(--text-dim);font-weight:400;margin-left:8px;">Tiered across all works - up to 2 free*, 3-4 = £100, 5+ = £200. </span>
       </div>
       <div id="joinery-list" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;"></div>
 <span id="joinery-count" style="display:none">0</span><span id="joinery-uplift" style="display:none">£0</span>
@@ -2221,7 +2217,7 @@ function exportPDF() {
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL - VERSION 56 - if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL - VERSION 58 - if you can see this in Notepad, you have the right file -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -2730,7 +2726,8 @@ function toggleWork(containerId, idx) {
 
 function updateTieredSummary(set, tiers, countId, upliftId) {
   const n = set.size;
-  document.getElementById(countId).textContent = n;
+  const countEl = document.getElementById(countId);
+  if (countEl) countEl.textContent = n;
   // Show combined uplift on all three summary bars
   const combinedUplift = getCombinedTierUplift();
   const total = selectedPlumbing.size + selectedJoinery.size;
