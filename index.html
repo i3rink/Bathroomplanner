@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL - VERSION 58 - if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL - VERSION 59 - if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -935,7 +935,7 @@ const FIXTURE_DEFS = {
   window:       { w:60,  h:10,  label:'Window',       color:'#a0e0ff', shape:'window',
                   hint:'Rotate to place on side walls.' },
   door:         { w:60,  h:20,  label:'Door',         color:'#f7a04f', shape:'door',
-                  hint:'R cycles swing direction (NE/NW/SW/SE). Rotate item to place on any wall.' },
+                  hint:'Hinge dot shows pivot side. Select to see swing arc. R cycles hinge corner (NE/NW/SW/SE). Rotate to place on any wall.' },
   towelrail:    { w:30,  h:5,  label:'Towel Rail',   color:'#f74f8e', shape:'rail',
                   hint:'Default 300×100mm. Rotate to place vertically.' },
   radiator:     { w:50,  h:4,  label:'Radiator',     color:'#f76a4f', shape:'radiator',
@@ -1553,6 +1553,14 @@ function drawDragPreview() {
   }
 }
 
+// Pick the shorter sweep between two angles for the door swing arc (<=90deg quarter turn)
+function _arcAntiClock(a, b) {
+  let d = b - a;
+  while (d <= -Math.PI) d += Math.PI*2;
+  while (d > Math.PI) d -= Math.PI*2;
+  return d < 0; // true = anticlockwise
+}
+
 function drawFixture(item, selected) {
   const px=item.x*CELL, py=item.y*CELL, pw=item.w*CELL, ph=item.h*CELL;
   const def=FIXTURE_DEFS[item.type], col=def.color;
@@ -1754,47 +1762,68 @@ function drawFixture(item, selected) {
     ctx.setLineDash([]);
 
   } else if (def.shape==='door') {
-    // Door as rectangle with directional swing arrow
-    // swingDir: 0=NE, 1=NW, 2=SW, 3=SE
+    // Door with architectural hinge-dot + swing-arc symbol.
+    // swingDir: 0=NE, 1=NW, 2=SW, 3=SE  (hinge corner + sweep direction)
     const swingDir = item.swingDir || 0;
 
-    // Door frame - solid lines on three sides, open side dashed
+    // Door frame outline
     ctx.lineWidth = 2;
     ctx.strokeStyle = col;
-    // All four sides solid for the frame
     ctx.beginPath(); ctx.roundRect(-hw+3,-hh+3,hw*2-6,hh*2-6,2); ctx.stroke();
 
-    // Diagonal swing arrow
-    // Arrow goes from one corner to the opposite, direction based on swingDir
-    const corners = [
-      { from:[-hw+6,-hh+6], to:[hw-6, hh-6] },  // 0: NW->SE (arrow points SE)
-      { from:[hw-6, -hh+6], to:[-hw+6, hh-6] },  // 1: NE->SW (arrow points SW)
-      { from:[hw-6,  hh-6], to:[-hw+6,-hh+6] },  // 2: SE->NW (arrow points NW)
-      { from:[-hw+6, hh-6], to:[hw-6, -hh+6] },  // 3: SW->NE (arrow points NE)
+    // Hinge corner + the corner the open leaf reaches toward, per swingDir.
+    // hinge = pivot point, openTo = far corner along the same wall edge.
+    const inset = 5;
+    const L = -hw+inset, R = hw-inset, T = -hh+inset, B = hh-inset;
+    const geo = [
+      { hinge:[L,B], openTo:[R,T] }, // 0 NE: hinge bottom-left, swings up-right
+      { hinge:[R,B], openTo:[L,T] }, // 1 NW: hinge bottom-right, swings up-left
+      { hinge:[R,T], openTo:[L,B] }, // 2 SW: hinge top-right, swings down-left
+      { hinge:[L,T], openTo:[R,B] }, // 3 SE: hinge top-left, swings down-right
     ];
-    const dir = corners[swingDir];
-    const fx=dir.from[0], fy=dir.from[1], tx=dir.to[0], ty=dir.to[1];
+    const g = geo[swingDir];
+    const hx=g.hinge[0], hy=g.hinge[1];
+    const ox=g.openTo[0], oy=g.openTo[1];
 
-    ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
-    ctx.beginPath(); ctx.moveTo(fx,fy); ctx.lineTo(tx,ty); ctx.stroke();
-    ctx.setLineDash([]);
+    // Leaf length = ~70% of door width, capped to fit the box
+    const fullSpan = Math.hypot(ox-hx, oy-hy);
+    const leafLen = Math.min(fullSpan, Math.min(hw,hh)*2-inset*2) * 0.7;
 
-    // Arrowhead at end point
-    const angle = Math.atan2(ty-fy, tx-fx);
-    const aLen = 8;
-    ctx.lineWidth=1.5;
-    ctx.beginPath();
-    ctx.moveTo(tx, ty);
-    ctx.lineTo(tx - aLen*Math.cos(angle-0.4), ty - aLen*Math.sin(angle-0.4));
-    ctx.moveTo(tx, ty);
-    ctx.lineTo(tx - aLen*Math.cos(angle+0.4), ty - aLen*Math.sin(angle+0.4));
-    ctx.stroke();
+    // Always-visible hinge dot (so orientation is readable even unselected)
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.arc(hx, hy, 2.6, 0, Math.PI*2); ctx.fill();
 
-    // Small swing direction label
-    const swingLabels = ['→↑','←↑','←↓','→↓'];
-    ctx.font='bold 9px DM Sans,sans-serif';
-    ctx.fillStyle=col; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(swingLabels[swingDir], 0, 0);
+    if (selected) {
+      // Leaf: solid line from hinge, 90deg toward the room interior (open position)
+      // Open edge points perpendicular to the wall the door sits on.
+      const wallIsHoriz = item.w >= item.h;
+      let leafEndX, leafEndY, arcStartX, arcStartY;
+      // Direction the leaf opens into the room: away from hinge along short axis
+      if (wallIsHoriz) {
+        // door on top/bottom wall: leaf opens vertically
+        const dirY = (hy < 0) ? 1 : -1; // hinge near top -> open downward, etc.
+        leafEndX = hx; leafEndY = hy + dirY*leafLen;
+        // closed-position edge: along the wall toward openTo
+        arcStartX = hx + Math.sign(ox-hx)*leafLen; arcStartY = hy;
+      } else {
+        const dirX = (hx < 0) ? 1 : -1;
+        leafEndX = hx + dirX*leafLen; leafEndY = hy;
+        arcStartX = hx; arcStartY = hy + Math.sign(oy-hy)*leafLen;
+      }
+
+      // Closed leaf (solid) along the wall
+      ctx.lineWidth = 2; ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(arcStartX, arcStartY); ctx.stroke();
+
+      // Swing arc (dashed) from closed edge to open edge
+      const startAng = Math.atan2(arcStartY-hy, arcStartX-hx);
+      const endAng   = Math.atan2(leafEndY-hy, leafEndX-hx);
+      ctx.lineWidth = 1.5; ctx.setLineDash([4,3]);
+      ctx.beginPath();
+      ctx.arc(hx, hy, leafLen, startAng, endAng, _arcAntiClock(startAng, endAng));
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
 
   } else if (def.shape==='rail') {
     const railLen=hw*2-8;
@@ -2217,7 +2246,7 @@ function exportPDF() {
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL - VERSION 58 - if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL - VERSION 59 - if you can see this in Notepad, you have the right file -->
 <html>
 <head>
 <meta charset="UTF-8">
