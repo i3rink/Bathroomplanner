@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL - VERSION 60 - if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL - VERSION 61 - if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -2234,15 +2234,18 @@ function exportPDF() {
   render();
   ctx = savedCtx;
 
-  // Crop to drawn area
+  // Crop to drawn area, rendered at higher resolution so it stays sharp when scaled up on the page
+  const SCALE = 3;
   const crop = document.createElement('canvas');
-  crop.width = cropW; crop.height = cropH;
-  crop.getContext('2d').drawImage(offscreen, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+  crop.width = cropW * SCALE; crop.height = cropH * SCALE;
+  const cropCtx = crop.getContext('2d');
+  cropCtx.imageSmoothingEnabled = true;
+  cropCtx.drawImage(offscreen, cropX, cropY, cropW, cropH, 0, 0, cropW * SCALE, cropH * SCALE);
   const imgData = crop.toDataURL('image/png');
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL - VERSION 60 - if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL - VERSION 61 - if you can see this in Notepad, you have the right file -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -2271,7 +2274,7 @@ function exportPDF() {
   /* DRAWING - takes up most of the space */
   .drawing { flex:1; display:flex; align-items:center; justify-content:center;
     border:1px solid #e0e4f0; border-radius:4px; overflow:hidden; background:#0f1117; padding:6px; }
-  .drawing img { max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; display:block; }
+  .drawing img { width:100%; height:100%; object-fit:contain; display:block; image-rendering:auto; }
 
   /* INFO PANEL */
   .info { width:210px; flex-shrink:0; display:flex; flex-direction:column; gap:12px; }
@@ -2980,4 +2983,3 @@ render();
 </script>
 </body>
 </html>
-
