@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL - VERSION 59 - if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL - VERSION 60 - if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -2161,12 +2161,8 @@ function exportPDF() {
   selectedFixed.forEach(i    => worksRowsArr.push({desc:FIXED_UPLIFTS[i].label,cat:FIXED_UPLIFTS[i].cat,uplift:'£'+FIXED_UPLIFTS[i].uplift}));
 
   const worksRowsHtml = worksRowsArr.length ? worksRowsArr.map(w =>
-    `<tr><td>${w.desc}</td><td>${w.cat}</td><td style="text-align:right">${w.uplift}</td></tr>`
-  ).join('') + `
-    <tr style="border-top:2px solid #dde;font-weight:700;">
-      <td colspan="2">Total fitter uplift</td>
-      <td style="text-align:right;color:#4f8ef7">£${fitterUpliftTotal}</td>
-    </tr>` : '<tr><td colspan="3" style="color:#aaa">None selected</td></tr>';
+    `<tr><td>${w.desc}</td><td>${w.cat}</td></tr>`
+  ).join('') : '<tr><td colspan="2" style="color:#aaa">None selected</td></tr>';
 
   // Panel calculator summary for PDF
   const panelChoice = document.getElementById('panelChoice');
@@ -2246,7 +2242,7 @@ function exportPDF() {
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL - VERSION 59 - if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL - VERSION 60 - if you can see this in Notepad, you have the right file -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -2270,12 +2266,12 @@ function exportPDF() {
   .hd-field .val { font-size:13px; font-weight:700; color:#222; }
 
   /* BODY */
-  .body { display:flex; gap:16px; flex:1; min-height:0; }
+  .body { display:flex; gap:16px; flex:1; min-height:0; height:165mm; }
 
   /* DRAWING - takes up most of the space */
   .drawing { flex:1; display:flex; align-items:center; justify-content:center;
     border:1px solid #e0e4f0; border-radius:4px; overflow:hidden; background:#0f1117; padding:6px; }
-  .drawing img { max-width:100%; max-height:100%; object-fit:contain; display:block; }
+  .drawing img { max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; display:block; }
 
   /* INFO PANEL */
   .info { width:210px; flex-shrink:0; display:flex; flex-direction:column; gap:12px; }
@@ -2373,7 +2369,7 @@ function exportPDF() {
         color:#4f8ef7;border-bottom:1px solid #dde8ff;padding-bottom:3px;margin-bottom:6px;">Financial Summary</div>
       <table style="width:100%;border-collapse:collapse;font-size:11px;">
         <tr><td style="color:#666;padding:2px 0;">Base fitting fee</td><td style="font-weight:600;text-align:right">£${baseFee.toLocaleString('en-GB')}</td></tr>
-        <tr><td style="color:#666;padding:2px 0;">Additional works (customer)</td><td style="font-weight:600;text-align:right">£${custTotal.toLocaleString('en-GB')}</td></tr>
+        <tr><td style="color:#666;padding:2px 0;">Additional works</td><td style="font-weight:600;text-align:right">£${custTotal.toLocaleString('en-GB')}</td></tr>
         <tr style="border-top:1px solid #eee;"><td style="color:#333;font-weight:700;padding-top:4px;">Fitter total</td><td style="font-weight:700;text-align:right;color:#4f8ef7;">£${fitterTotal.toLocaleString('en-GB')}</td></tr>
 
       </table>
@@ -2389,7 +2385,6 @@ function exportPDF() {
         <tr style="border-bottom:1px solid #dde;">
           <th style="text-align:left;padding:3px 4px;color:#888;font-size:9px;text-transform:uppercase;letter-spacing:.08em">Description</th>
           <th style="text-align:left;padding:3px 4px;color:#888;font-size:9px;text-transform:uppercase;letter-spacing:.08em">Category</th>
-          <th style="text-align:right;padding:3px 4px;color:#888;font-size:9px;text-transform:uppercase;letter-spacing:.08em">Fitter uplift</th>
         </tr>
       </thead>
       <tbody>${worksRowsHtml}</tbody>
@@ -2985,3 +2980,4 @@ render();
 </script>
 </body>
 </html>
+
