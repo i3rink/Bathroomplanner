@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 42 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 46 — if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -136,6 +136,75 @@
 
   #logoCanvas { image-rendering: crisp-edges; }
 
+  /* ── TABS ── */
+  .tab-bar { display:flex; gap:0; background:var(--surface); border-bottom:1px solid var(--border);
+    flex-shrink:0; padding:0 16px; }
+  .tab-btn { background:none; border:none; border-bottom:2px solid transparent;
+    color:var(--text-dim); font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500;
+    padding:10px 18px; cursor:pointer; transition:all 0.15s; }
+  .tab-btn:hover { color:var(--text); }
+  .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
+  .tab-panel { display:none; flex:1; overflow:hidden; }
+  .tab-panel.active { display:flex; }
+
+  /* ── SPEC TAB ── */
+  .spec-wrap { flex:1; overflow-y:auto; padding:20px 24px; background:var(--bg); }
+  .spec-section { background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:16px 18px; margin-bottom:16px; }
+  .spec-section-title { font-size:12px; font-weight:700; color:var(--accent);
+    letter-spacing:0.1em; text-transform:uppercase; margin-bottom:12px; }
+  .spec-row { display:grid; gap:10px; margin-bottom:10px; }
+  .spec-row-2 { grid-template-columns:1fr 1fr; }
+  .spec-row-3 { grid-template-columns:1fr 1fr 1fr; }
+  .spec-row-4 { grid-template-columns:2fr 1fr 1fr 1fr; }
+  .spec-label { font-size:11px; color:var(--text-dim); margin-bottom:3px; }
+  .spec-input { background:var(--surface2); border:1px solid var(--border); border-radius:6px;
+    color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px;
+    padding:7px 10px; width:100%; outline:none; }
+  .spec-input:focus { border-color:var(--accent); }
+  select.spec-input { cursor:pointer; }
+  textarea.spec-input { resize:vertical; min-height:70px; font-size:12px; }
+  .spec-tag { display:inline-block; background:rgba(79,142,247,0.15); border:1px solid var(--accent);
+    color:var(--accent); border-radius:4px; font-size:10px; font-weight:600;
+    padding:2px 8px; margin-left:8px; vertical-align:middle; }
+
+  /* Works items table */
+  .works-table { width:100%; border-collapse:collapse; margin-bottom:10px; }
+  .works-table th { font-size:10px; color:var(--text-dim); text-align:left; font-weight:600;
+    letter-spacing:0.08em; text-transform:uppercase; padding:4px 6px; border-bottom:1px solid var(--border); }
+  .works-table td { padding:5px 6px; border-bottom:1px solid #1e2235; vertical-align:middle; }
+  .works-table tr:last-child td { border-bottom:none; }
+  .works-input { background:var(--surface2); border:1px solid var(--border); border-radius:4px;
+    color:var(--text); font-family:'DM Sans',sans-serif; font-size:12px;
+    padding:4px 7px; width:100%; outline:none; }
+  .works-input:focus { border-color:var(--accent); }
+  .works-input.num { width:80px; text-align:right; }
+  .work-check-item { display:flex; align-items:center; gap:8px; padding:7px 10px;
+    background:var(--surface2); border:1px solid var(--border); border-radius:6px;
+    cursor:pointer; transition:all 0.15s; font-size:12px; color:var(--text-dim); }
+  .work-check-item:hover { border-color:var(--accent); color:var(--text); }
+  .work-check-item.selected { background:rgba(79,142,247,0.12); border-color:var(--accent); color:var(--text); }
+  .work-check-item input[type=checkbox] { accent-color:var(--accent); width:14px; height:14px; flex-shrink:0; }
+  .work-fixed-item { display:flex; align-items:center; justify-content:space-between;
+    gap:8px; padding:7px 10px; background:var(--surface2); border:1px solid var(--border);
+    border-radius:6px; cursor:pointer; transition:all 0.15s; }
+  .work-fixed-item:hover { border-color:#f7c94f; }
+  .work-fixed-item.selected { background:rgba(247,201,79,0.1); border-color:#f7c94f; }
+  .work-fixed-item .wfi-label { font-size:12px; color:var(--text-dim); flex:1; }
+  .work-fixed-item .wfi-price { font-size:11px; font-weight:700; color:#f7c94f; }
+  .work-fixed-item input[type=checkbox] { accent-color:#f7c94f; width:14px; height:14px; flex-shrink:0; }
+  .included-badge { font-size:10px; color:#4ff7a0; font-weight:600; }
+  .chargeable-badge { font-size:10px; color:#f7c94f; font-weight:600; }
+
+  /* Totals */
+  .totals-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+  .total-card { background:var(--surface2); border:1px solid var(--border); border-radius:8px;
+    padding:10px 14px; }
+  .total-card .tc-label { font-size:10px; color:var(--text-dim); text-transform:uppercase;
+    letter-spacing:0.08em; margin-bottom:4px; }
+  .total-card .tc-value { font-size:20px; font-weight:700; color:var(--accent); font-family:'DM Mono',monospace; }
+  .total-card .tc-sub { font-size:10px; color:var(--text-dim); margin-top:2px; }
+
   /* ── TABLET RESPONSIVE ── */
 
   /* Hamburger toggle button — hidden on desktop */
@@ -233,6 +302,13 @@
   </div>
 </header>
 
+<div class="tab-bar">
+  <button class="tab-btn active" id="tab-designer" onclick="switchTab('designer')">🛁 Bathroom Designer</button>
+  <button class="tab-btn" id="tab-survey" onclick="switchTab('survey')">📝 Pre-Survey</button>
+  <button class="tab-btn" id="tab-spec" onclick="switchTab('spec')">🔧 Installation Spec</button>
+</div>
+
+<div class="tab-panel active" id="panel-designer">
 <div class="workspace">
   <div class="sidebar" id="sidebar">
     <!-- Close button — tablet only -->
@@ -446,8 +522,385 @@
 
 <div class="bottom-bar">
   <span class="hint" id="hintText">Draw room: click and drag on the grid</span>
+  <button class="btn" onclick="undoLastNote()">✎ Undo Last Note</button>
   <button class="btn" onclick="undoLast()">↩ Undo</button>
 </div>
+</div><!-- end .workspace -->
+</div><!-- end #panel-designer -->
+
+<!-- ══════════════════════════════════════ -->
+<!-- INSTALLATION SPEC TAB                  -->
+<!-- ══════════════════════════════════════ -->
+
+<!-- ══════════════════════════════════════ -->
+<!-- PRE-SURVEY TAB                         -->
+<!-- ══════════════════════════════════════ -->
+<div class="tab-panel" id="panel-survey">
+  <div class="spec-wrap">
+
+    <!-- Property Details -->
+    <div class="spec-section">
+      <div class="spec-section-title">Property Details</div>
+      <div class="spec-row spec-row-3">
+        <div>
+          <div class="spec-label">Property Type</div>
+          <select id="ps-property-type" class="spec-input">
+            <option>Semi-Detached</option>
+            <option>Detached</option>
+            <option>Terraced</option>
+            <option>End of Terrace</option>
+            <option>Bungalow</option>
+            <option>Flat / Apartment</option>
+            <option>New Build</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div>
+          <div class="spec-label">How Many Bathrooms?</div>
+          <select id="ps-num-bathrooms" class="spec-input">
+            <option>1</option>
+            <option>2</option>
+            <option>3</option>
+            <option>4+</option>
+          </select>
+        </div>
+        <div>
+          <div class="spec-label">Room Being Surveyed</div>
+          <select id="ps-room" class="spec-input">
+            <option>Main Bathroom</option>
+            <option>En-suite</option>
+            <option>Cloakroom / WC</option>
+            <option>Shower Room</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Heating & Water -->
+    <div class="spec-section">
+      <div class="spec-section-title">Heating &amp; Water System</div>
+      <div class="spec-row spec-row-3">
+        <div>
+          <div class="spec-label">Heating Type</div>
+          <select id="ps-heating" class="spec-input">
+            <option>Combi Boiler</option>
+            <option>System Boiler</option>
+            <option>Gravity Fed (vented)</option>
+            <option>Unvented Cylinder</option>
+            <option>Electric Only</option>
+            <option>Heat Pump</option>
+            <option>Unknown</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div>
+          <div class="spec-label">Stopcock Location</div>
+          <select id="ps-stopcock" class="spec-input">
+            <option>Under Kitchen Sink</option>
+            <option>Under Stairs</option>
+            <option>Utility Room</option>
+            <option>Bathroom</option>
+            <option>Garage</option>
+            <option>Outside / Street</option>
+            <option>Unknown</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div>
+          <div class="spec-label">Known Water Escape?</div>
+          <select id="ps-water-escape" class="spec-input">
+            <option>No</option>
+            <option>Yes — minor</option>
+            <option>Yes — significant</option>
+          </select>
+        </div>
+      </div>
+      <div class="spec-row spec-row-2">
+        <div>
+          <div class="spec-label">Water Escape — Details</div>
+          <input type="text" id="ps-water-escape-detail" class="spec-input" placeholder="Location, extent, any damage noted...">
+        </div>
+        <div>
+          <div class="spec-label">Electrical Consumer Unit Location</div>
+          <select id="ps-consumer-unit" class="spec-input">
+            <option>Entrance Hall</option>
+            <option>Kitchen</option>
+            <option>Garage</option>
+            <option>Utility Room</option>
+            <option>Under Stairs</option>
+            <option>Cellar / Basement</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Current Bathroom -->
+    <div class="spec-section">
+      <div class="spec-section-title">Current Bathroom</div>
+      <div class="spec-row spec-row-3">
+        <div>
+          <div class="spec-label">Current Bathroom Suite</div>
+          <select id="ps-current-suite" class="spec-input">
+            <option>Full suite (bath, WC, basin)</option>
+            <option>Shower room (shower, WC, basin)</option>
+            <option>Wet room</option>
+            <option>Cloakroom (WC, basin only)</option>
+            <option>Basic — WC only</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div>
+          <div class="spec-label">Current Wall Coverings</div>
+          <select id="ps-current-walls" class="spec-input">
+            <option>Ceramic tiles</option>
+            <option>Porcelain tiles</option>
+            <option>Wall panels</option>
+            <option>Painted plaster</option>
+            <option>Wallpaper</option>
+            <option>Mixed</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div>
+          <div class="spec-label">Current Floor Covering</div>
+          <select id="ps-current-floor" class="spec-input">
+            <option>Vinyl / Lino</option>
+            <option>Ceramic tiles</option>
+            <option>Porcelain tiles</option>
+            <option>Laminate</option>
+            <option>Carpet</option>
+            <option>Bare concrete</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="spec-row spec-row-2">
+        <div>
+          <div class="spec-label">Ventilation Type</div>
+          <select id="ps-ventilation-type" class="spec-input">
+            <option>Window</option>
+            <option>Extractor fan — wall</option>
+            <option>Extractor fan — ceiling</option>
+            <option>Extractor fan — inline</option>
+            <option>None</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div>
+          <div class="spec-label">Ventilation Size (mm)</div>
+          <input type="number" id="ps-ventilation-size" class="spec-input" placeholder="e.g. 100" step="25">
+        </div>
+      </div>
+    </div>
+
+    <!-- Additional Pre-Survey Notes -->
+    <div class="spec-section">
+      <div class="spec-section-title">Additional Pre-Survey Notes</div>
+      <div>
+        <div class="spec-label">Customer requirements / preferences noted on site</div>
+        <textarea class="spec-input" id="ps-customer-req" style="min-height:80px;"
+          placeholder="Any specific customer requests, accessibility requirements, preferences discussed on site..."></textarea>
+      </div>
+      <div style="margin-top:10px;">
+        <div class="spec-label">Surveyor notes</div>
+        <textarea class="spec-input" id="ps-surveyor-notes" style="min-height:80px;"
+          placeholder="Anything else relevant — access issues, property condition, anything that affects the install..."></textarea>
+      </div>
+    </div>
+
+  </div>
+</div><!-- end #panel-survey -->
+
+<div class="tab-panel" id="panel-spec">
+  <div class="spec-wrap">
+
+    <!-- Job & Package -->
+    <div class="spec-section">
+      <div class="spec-section-title">Job Details</div>
+      <div class="spec-row spec-row-3">
+        <div>
+          <div class="spec-label">Package</div>
+          <select id="spec-package" class="spec-input" onchange="updateSpecTotals()">
+            <option value="arran">Arran — Entry Level</option>
+            <option value="bute">Bute</option>
+            <option value="mull">Mull</option>
+            <option value="cumbrae">Cumbrae</option>
+            <option value="skye">Skye — Premium</option>
+            <option value="cloakroom">Cloakroom Deal</option>
+          </select>
+        </div>
+        <div>
+          <div class="spec-label">Survey Date</div>
+          <input type="date" id="spec-date" class="spec-input">
+        </div>
+        <div>
+          <div class="spec-label">Surveyor</div>
+          <input type="text" id="spec-surveyor" class="spec-input" placeholder="Name">
+        </div>
+      </div>
+      <div class="spec-row spec-row-2">
+        <div>
+          <div class="spec-label">Base Fitting Fee</div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="color:var(--text-dim);font-size:13px;">£</span>
+            <input type="number" id="spec-base-fee" class="spec-input" value="1150" min="0" step="50" oninput="updateSpecTotals()">
+          </div>
+        </div>
+        <div>
+          <div class="spec-label">Package note <span class="spec-tag" id="package-tag">Arran — all works chargeable</span></div>
+          <input type="text" id="spec-package-note" class="spec-input" placeholder="Any package-specific notes...">
+        </div>
+      </div>
+    </div>
+
+    <!-- Existing Conditions -->
+    <div class="spec-section">
+      <div class="spec-section-title">Existing Conditions</div>
+      <div class="spec-row spec-row-3">
+        <div>
+          <div class="spec-label">Floor substrate</div>
+          <select class="spec-input" id="cond-floor">
+            <option>Concrete</option>
+            <option>Timber joist</option>
+            <option>Beam &amp; block</option>
+            <option>Unknown</option>
+          </select>
+        </div>
+        <div>
+          <div class="spec-label">Wall substrate</div>
+          <select class="spec-input" id="cond-wall">
+            <option>Plasterboard</option>
+            <option>Plaster on masonry</option>
+            <option>Dot &amp; dab</option>
+            <option>Timber stud</option>
+            <option>Unknown</option>
+          </select>
+        </div>
+        <div>
+          <div class="spec-label">Existing soil pipe location</div>
+          <select class="spec-input" id="cond-soil">
+            <option>North wall</option>
+            <option>South wall</option>
+            <option>East wall</option>
+            <option>West wall</option>
+            <option>Floor</option>
+            <option>Unknown</option>
+          </select>
+        </div>
+      </div>
+      <div class="spec-row spec-row-3">
+        <div>
+          <div class="spec-label">Existing flooring</div>
+          <select class="spec-input" id="cond-existing-floor">
+            <option>Vinyl</option>
+            <option>Ceramic tile</option>
+            <option>Porcelain tile</option>
+            <option>Laminate</option>
+            <option>Bare concrete</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div>
+          <div class="spec-label">Access</div>
+          <select class="spec-input" id="cond-access">
+            <option>Good — no issues</option>
+            <option>Restricted — narrow doorway</option>
+            <option>Restricted — stairs only</option>
+            <option>Difficult — note below</option>
+          </select>
+        </div>
+        <div>
+          <div class="spec-label">Electrical supply</div>
+          <select class="spec-input" id="cond-elec">
+            <option>Existing — sufficient</option>
+            <option>Existing — needs upgrade</option>
+            <option>New circuit required</option>
+            <option>Unknown</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <div class="spec-label">Additional site notes</div>
+        <textarea class="spec-input" id="cond-notes" placeholder="Any access issues, unusual features, things the fitter needs to know..."></textarea>
+      </div>
+    </div>
+
+    <!-- Additional Works — Required Items (multi-select tiered) -->
+    <div class="spec-section">
+      <div class="spec-section-title">Required Works
+        <span style="font-size:10px;color:var(--text-dim);font-weight:400;margin-left:8px;">Select all that apply — up to 2 free, 3-4 = £100 uplift, 5-6 = £200 uplift</span>
+      </div>
+      <div id="required-works-list" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;"></div>
+      <div style="display:flex;align-items:center;gap:16px;padding:8px 10px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);">
+        <span style="font-size:11px;color:var(--text-dim);">Selected: <strong id="req-count" style="color:var(--text)">0</strong></span>
+        <span style="font-size:11px;color:var(--text-dim);">Fitter uplift: <strong id="req-uplift" style="color:var(--accent)">£0</strong></span>
+      </div>
+    </div>
+
+    <!-- Plumbing Reposition (multi-select tiered) -->
+    <div class="spec-section">
+      <div class="spec-section-title">Plumbing — Reposition
+        <span style="font-size:10px;color:var(--text-dim);font-weight:400;margin-left:8px;">Up to 2 free, 3-4 = £100, 5-8 = £200</span>
+      </div>
+      <div id="plumbing-reposition-list" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;"></div>
+      <div style="display:flex;align-items:center;gap:16px;padding:8px 10px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);">
+        <span style="font-size:11px;color:var(--text-dim);">Selected: <strong id="plumb-count" style="color:var(--text)">0</strong></span>
+        <span style="font-size:11px;color:var(--text-dim);">Fitter uplift: <strong id="plumb-uplift" style="color:var(--accent)">£0</strong></span>
+      </div>
+    </div>
+
+    <!-- Joinery (multi-select tiered) -->
+    <div class="spec-section">
+      <div class="spec-section-title">Joinery
+        <span style="font-size:10px;color:var(--text-dim);font-weight:400;margin-left:8px;">Up to 2 free, 3-4 = £100, 5-8 = £200</span>
+      </div>
+      <div id="joinery-list" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;"></div>
+      <div style="display:flex;align-items:center;gap:16px;padding:8px 10px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);">
+        <span style="font-size:11px;color:var(--text-dim);">Selected: <strong id="joinery-count" style="color:var(--text)">0</strong></span>
+        <span style="font-size:11px;color:var(--text-dim);">Fitter uplift: <strong id="joinery-uplift" style="color:var(--accent)">£0</strong></span>
+      </div>
+    </div>
+
+    <!-- Fixed Uplifts -->
+    <div class="spec-section">
+      <div class="spec-section-title">Fixed Uplifts</div>
+      <div id="fixed-uplifts-list" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;"></div>
+    </div>
+
+    <!-- Totals -->
+    <div class="spec-section">
+      <div class="spec-section-title">Summary</div>
+      <div class="totals-grid">
+        <div class="total-card">
+          <div class="tc-label">Customer Total</div>
+          <div class="tc-value" id="total-customer">£0</div>
+          <div class="tc-sub">Base fee not included — quoted separately</div>
+        </div>
+        <div class="total-card">
+          <div class="tc-label">Fitter Total</div>
+          <div class="tc-value" id="total-fitter">£1,150</div>
+          <div class="tc-sub">Base fee + uplifts</div>
+        </div>
+        <div class="total-card">
+          <div class="tc-label">Annick Revenue</div>
+          <div class="tc-value" id="total-annick">£0</div>
+          <div class="tc-sub">From additional works only</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Customer Notes -->
+    <div class="spec-section">
+      <div class="spec-section-title">Customer Facing Notes</div>
+      <div class="spec-label">Summary for customer (appears in PDF)</div>
+      <textarea class="spec-input" id="spec-customer-notes" style="min-height:90px;"
+        placeholder="Plain English summary of what's included, any items to note, expected timeline..."></textarea>
+    </div>
+
+  </div>
+</div><!-- end #panel-spec -->
 
 <div class="modal-overlay" id="noteModal">
   <div class="modal">
@@ -525,7 +978,7 @@ let rooms = [], items = [], notes = [];
 let isDragging = false, isResizing = false;
 let dragStart = null, dragCurrent = null;
 let resizeStart = null, resizeItem = null;
-let selectedIdx = null, pendingNotePos = null;
+let selectedIdx = null, pendingNotePos = null, selectedNote = null, noteDragStart = null;
 let history = [];
 
 // ── HISTORY ──
@@ -538,12 +991,19 @@ function saveHistory() {
   if (history.length > 40) history.shift();
 }
 
+function undoLastNote() {
+  if (!notes.length) return;
+  saveHistory();
+  notes.pop();
+  render();
+}
+
 function undoLast() {
   if (!history.length) return;
   const p = history.pop();
   rooms = p.rooms; items = p.items; notes = p.notes;
-  selectedIdx = null; isResizing = false; isDragging = false;
-  resizeItem = null; resizeStart = null; dragStart = null;
+  selectedIdx = null; selectedNote = null; isResizing = false; isDragging = false;
+  resizeItem = null; resizeStart = null; dragStart = null; noteDragStart = null;
   updateDims(); updateSelectedPanel(); render();
 }
 
@@ -741,6 +1201,13 @@ function onMove(e) {
     }
     updateSelectedPanel();
     render();
+  } else if (mode === 'select' && isDragging && selectedNote !== null && noteDragStart) {
+    const dx = gx - noteDragStart.gx, dy = gy - noteDragStart.gy;
+    if (!dx && !dy) return;
+    noteDragStart = {gx, gy};
+    notes[selectedNote].x = clamp(Math.round(notes[selectedNote].x + dx), 0, COLS - 1);
+    notes[selectedNote].y = clamp(Math.round(notes[selectedNote].y + dy), 0, ROWS - 1);
+    render();
   } else if (mode === 'select' && isDragging && dragStart) {
     const it = safeItem();
     if (!it) { isDragging = false; return; }
@@ -767,6 +1234,7 @@ function onUp(e) {
   }
   isDragging = false; isResizing = false;
   dragStart = null; dragCurrent = null; resizeStart = null; resizeItem = null;
+  noteDragStart = null;
   if (mode === 'select') canvas.style.cursor = 'default';
   render();
 }
@@ -780,8 +1248,14 @@ function hitTest(gx, gy) {
 }
 
 function noteHitTest(gx, gy) {
+  // Hit test against note bounding box (text width approximation)
   for (let i = notes.length - 1; i >= 0; i--) {
-    if (Math.abs(notes[i].x - gx) <= 1 && Math.abs(notes[i].y - gy) <= 1) return i;
+    const n = notes[i];
+    // Estimate width in cells: ~6px per char / CELL
+    const estW = Math.ceil((n.text.length * 6 + 20) / CELL);
+    if (gx >= n.x && gx <= n.x + estW && Math.abs(gy - n.y) <= 1) return i;
+    // Also hit pin dot area
+    if (Math.abs(gx - n.x) <= 1 && Math.abs(gy - n.y) <= 1) return i;
   }
   return -1;
 }
@@ -873,7 +1347,7 @@ function render() {
   if (isDragging && dragStart && dragCurrent && mode === 'room') drawDragPreview();
   const validSel = (selectedIdx !== null && selectedIdx >= 0 && selectedIdx < items.length) ? selectedIdx : -1;
   items.forEach((item, i) => drawFixture(item, i === validSel));
-  notes.forEach(n => drawNote(n));
+  notes.forEach((n, i) => drawNote(n, i === selectedNote));
   if (validSel >= 0) drawDimensionLines(items[validSel]);
 }
 
@@ -1498,15 +1972,39 @@ function drawDimensionLines(item) {
   ctx.restore();
 }
 
-function drawNote(n) {
-  const x=n.x*CELL+2, y=n.y*CELL+CELL/2;
-  ctx.font='bold 10px DM Sans, sans-serif';
-  const tw=ctx.measureText(n.text).width;
-  ctx.fillStyle='rgba(247,201,79,0.18)';
-  ctx.beginPath(); ctx.roundRect(x+9,y-8,tw+10,16,3); ctx.fill();
-  ctx.fillStyle='#f7c94f'; ctx.beginPath(); ctx.arc(x+3,y,3.5,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle='#f7c94f'; ctx.textAlign='left'; ctx.textBaseline='middle';
-  ctx.fillText(n.text, x+13, y);
+function drawNote(n, selected) {
+  const x = n.x*CELL, y = n.y*CELL;
+  ctx.font = 'bold 10px DM Sans, sans-serif';
+  const tw = ctx.measureText(n.text).width;
+  const pad = 5, pinR = 4;
+  const bx = x + pinR*2 + 2, bw = tw + pad*2, bh = 18;
+  const by = y - bh/2;
+
+  // Pill background
+  ctx.fillStyle = selected ? 'rgba(255,107,53,0.3)' : 'rgba(255,107,53,0.15)';
+  ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 4); ctx.fill();
+
+  // Border if selected
+  if (selected) {
+    ctx.strokeStyle = '#ff6b35'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 4); ctx.stroke();
+  }
+
+  // Pin dot
+  ctx.fillStyle = '#ff6b35';
+  ctx.beginPath(); ctx.arc(x + pinR, y, pinR, 0, Math.PI*2); ctx.fill();
+
+  // Text
+  ctx.fillStyle = '#ff6b35';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(n.text, bx + pad, y);
+
+  // Drag handle if selected
+  if (selected) {
+    ctx.fillStyle = 'rgba(255,107,53,0.8)';
+    ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('✥', x + pinR, y);
+  }
 }
 
 // ── SNAP TO WALL ──
@@ -1575,6 +2073,58 @@ function exportPDF() {
   const hText = document.getElementById('dimH').textContent;
   const aText = document.getElementById('dimA').textContent;
   const notesText = notes.length ? notes.map(n => '• ' + n.text).join('<br>') : 'None';
+
+  // Spec tab data
+  const specPackage = document.getElementById('spec-package');
+  const packageName = specPackage ? specPackage.options[specPackage.selectedIndex].text : '—';
+  const surveyor = document.getElementById('spec-surveyor')?.value || '—';
+  const baseFee = parseFloat(document.getElementById('spec-base-fee')?.value) || 1150;
+  // Pre-survey data
+  const psPropertyType   = document.getElementById('ps-property-type')?.value || '—';
+  const psNumBathrooms   = document.getElementById('ps-num-bathrooms')?.value || '—';
+  const psRoom           = document.getElementById('ps-room')?.value || '—';
+  const psHeating        = document.getElementById('ps-heating')?.value || '—';
+  const psStopcock       = document.getElementById('ps-stopcock')?.value || '—';
+  const psWaterEscape    = document.getElementById('ps-water-escape')?.value || '—';
+  const psWaterDetail    = document.getElementById('ps-water-escape-detail')?.value || '';
+  const psConsumerUnit   = document.getElementById('ps-consumer-unit')?.value || '—';
+  const psCurrentSuite   = document.getElementById('ps-current-suite')?.value || '—';
+  const psCurrentWalls   = document.getElementById('ps-current-walls')?.value || '—';
+  const psCurrentFloor   = document.getElementById('ps-current-floor')?.value || '—';
+  const psVentType       = document.getElementById('ps-ventilation-type')?.value || '—';
+  const psVentSize       = document.getElementById('ps-ventilation-size')?.value || '—';
+  const psCustomerReq    = document.getElementById('ps-customer-req')?.value || '';
+  const psSurveyorNotes  = document.getElementById('ps-surveyor-notes')?.value || '';
+  // Legacy compat
+  const condNotes = psSurveyorNotes;
+  const custNotes = document.getElementById('spec-customer-notes')?.value || '';
+  const specDate = document.getElementById('spec-date')?.value || '';
+
+  // Build works summary for PDF
+  const reqUp   = tieredUplift(selectedRequired.size, REQ_TIERS);
+  const plumbUp = tieredUplift(selectedPlumbing.size, PLUMB_TIERS);
+  const joinUp  = tieredUplift(selectedJoinery.size,  JOIN_TIERS);
+  let fixedUp   = 0;
+  selectedFixed.forEach(i => { fixedUp += FIXED_UPLIFTS[i].uplift; });
+  const fitterUpliftTotal = reqUp + plumbUp + joinUp + fixedUp;
+  const fitterTotal = baseFee + fitterUpliftTotal;
+  const annickTotal = Math.round(fitterUpliftTotal * 0.5);
+  const custTotal   = fitterUpliftTotal;
+
+  // Build works rows
+  let worksRowsArr = [];
+  selectedRequired.forEach(i => worksRowsArr.push({desc:REQUIRED_WORKS[i],cat:'Required',uplift:'(tiered)'}));
+  selectedPlumbing.forEach(i => worksRowsArr.push({desc:PLUMBING_REPOSITION[i],cat:'Plumbing',uplift:'(tiered)'}));
+  selectedJoinery.forEach(i  => worksRowsArr.push({desc:JOINERY_ITEMS[i],cat:'Joinery',uplift:'(tiered)'}));
+  selectedFixed.forEach(i    => worksRowsArr.push({desc:FIXED_UPLIFTS[i].label,cat:FIXED_UPLIFTS[i].cat,uplift:'£'+FIXED_UPLIFTS[i].uplift}));
+
+  const worksRowsHtml = worksRowsArr.length ? worksRowsArr.map(w =>
+    `<tr><td>${w.desc}</td><td>${w.cat}</td><td style="text-align:right">${w.uplift}</td></tr>`
+  ).join('') + `
+    <tr style="border-top:2px solid #dde;font-weight:700;">
+      <td colspan="2">Total fitter uplift</td>
+      <td style="text-align:right;color:#4f8ef7">£${fitterUpliftTotal}</td>
+    </tr>` : '<tr><td colspan="3" style="color:#aaa">None selected</td></tr>';
 
   // Panel calculator summary for PDF
   const panelChoice = document.getElementById('panelChoice');
@@ -1654,7 +2204,7 @@ function exportPDF() {
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 42 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 46 — if you can see this in Notepad, you have the right file -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -1735,9 +2285,81 @@ function exportPDF() {
     </div>
     <div>
       <div class="section-title">Notes</div>
-      <div class="notes-text">${notesText}</div>
+      <div class="notes-text">${notesText || 'None'}</div>
     </div>
   </div>
+</div>
+
+<!-- INSTALLATION SPEC SECTION -->
+<div style="margin-top:20px;page-break-before:always;">
+  <div style="display:flex;justify-content:space-between;align-items:center;
+    border-bottom:2px solid #4f8ef7;padding-bottom:8px;margin-bottom:16px;">
+    <div>
+      <div style="font-size:18px;font-weight:800;color:#4f8ef7;">ANNICK <span style="color:#222">BATHROOMS</span></div>
+      <div style="font-size:11px;color:#888;margin-top:2px;">Installation Specification</div>
+    </div>
+    <div style="display:flex;gap:24px;">
+      <div style="text-align:right"><div style="font-size:9px;color:#aaa;text-transform:uppercase;">Package</div><div style="font-size:13px;font-weight:700">${packageName}</div></div>
+      <div style="text-align:right"><div style="font-size:9px;color:#aaa;text-transform:uppercase;">Surveyor</div><div style="font-size:13px;font-weight:700">${surveyor}</div></div>
+      <div style="text-align:right"><div style="font-size:9px;color:#aaa;text-transform:uppercase;">Date</div><div style="font-size:13px;font-weight:700">${specDate}</div></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:16px;">
+    <!-- Existing conditions -->
+    <div>
+      <div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+        color:#4f8ef7;border-bottom:1px solid #dde8ff;padding-bottom:3px;margin-bottom:6px;">Pre-Survey</div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <tr><td style="color:#666;padding:2px 0;">Property type</td><td style="font-weight:600;text-align:right">${psPropertyType}</td></tr>
+        <tr><td style="color:#666;padding:2px 0;">Room</td><td style="font-weight:600;text-align:right">${psRoom}</td></tr>
+        <tr><td style="color:#666;padding:2px 0;">Heating system</td><td style="font-weight:600;text-align:right">${psHeating}</td></tr>
+        <tr><td style="color:#666;padding:2px 0;">Stopcock</td><td style="font-weight:600;text-align:right">${psStopcock}</td></tr>
+        <tr><td style="color:#666;padding:2px 0;">Consumer unit</td><td style="font-weight:600;text-align:right">${psConsumerUnit}</td></tr>
+        <tr><td style="color:#666;padding:2px 0;">Water escape</td><td style="font-weight:600;text-align:right">${psWaterEscape}</td></tr>
+        <tr><td style="color:#666;padding:2px 0;">Current suite</td><td style="font-weight:600;text-align:right">${psCurrentSuite}</td></tr>
+        <tr><td style="color:#666;padding:2px 0;">Current walls</td><td style="font-weight:600;text-align:right">${psCurrentWalls}</td></tr>
+        <tr><td style="color:#666;padding:2px 0;">Current floor</td><td style="font-weight:600;text-align:right">${psCurrentFloor}</td></tr>
+        <tr><td style="color:#666;padding:2px 0;">Ventilation</td><td style="font-weight:600;text-align:right">${psVentType}${psVentSize !== '—' ? ' — ' + psVentSize + 'mm' : ''}</td></tr>
+      </table>
+      ${psWaterDetail ? `<div style="margin-top:4px;font-size:10px;color:#c00;background:#fff5f5;padding:4px 8px;border-radius:4px;">⚠ Water escape: ${psWaterDetail}</div>` : ''}
+      ${psSurveyorNotes ? `<div style="margin-top:6px;font-size:10px;color:#555;background:#f8f9ff;padding:6px 8px;border-radius:4px;">${psSurveyorNotes}</div>` : ''}
+    </div>
+    <!-- Financial summary -->
+    <div>
+      <div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+        color:#4f8ef7;border-bottom:1px solid #dde8ff;padding-bottom:3px;margin-bottom:6px;">Financial Summary</div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <tr><td style="color:#666;padding:2px 0;">Base fitting fee</td><td style="font-weight:600;text-align:right">£${baseFee.toLocaleString('en-GB')}</td></tr>
+        <tr><td style="color:#666;padding:2px 0;">Additional works (customer)</td><td style="font-weight:600;text-align:right">£${custTotal.toLocaleString('en-GB')}</td></tr>
+        <tr style="border-top:1px solid #eee;"><td style="color:#333;font-weight:700;padding-top:4px;">Fitter total</td><td style="font-weight:700;text-align:right;color:#4f8ef7;">£${fitterTotal.toLocaleString('en-GB')}</td></tr>
+        <tr><td style="color:#666;padding:2px 0;">Annick revenue (works)</td><td style="font-weight:600;text-align:right">£${annickTotal.toLocaleString('en-GB')}</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Additional works table -->
+  <div>
+    <div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+      color:#4f8ef7;border-bottom:1px solid #dde8ff;padding-bottom:3px;margin-bottom:8px;">Additional Works</div>
+    <table style="width:100%;border-collapse:collapse;font-size:11px;">
+      <thead>
+        <tr style="border-bottom:1px solid #dde;">
+          <th style="text-align:left;padding:3px 4px;color:#888;font-size:9px;text-transform:uppercase;letter-spacing:.08em">Description</th>
+          <th style="text-align:left;padding:3px 4px;color:#888;font-size:9px;text-transform:uppercase;letter-spacing:.08em">Category</th>
+          <th style="text-align:right;padding:3px 4px;color:#888;font-size:9px;text-transform:uppercase;letter-spacing:.08em">Fitter uplift</th>
+        </tr>
+      </thead>
+      <tbody>${worksRowsHtml}</tbody>
+    </table>
+  </div>
+
+  ${custNotes ? `
+  <div style="margin-top:14px;">
+    <div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+      color:#4f8ef7;border-bottom:1px solid #dde8ff;padding-bottom:3px;margin-bottom:6px;">Notes for Customer</div>
+    <div style="font-size:11px;color:#444;line-height:1.6;">${custNotes}</div>
+  </div>` : ''}
 </div>
 
 <div class="ft">
@@ -1953,6 +2575,164 @@ function closeSidebar() {
 }
 
 // Sidebar auto-close handled inside setMode
+
+// ── TAB SWITCHING ──
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+// ── INSTALLATION SPEC ──
+
+const PACKAGE_NOTES = {
+  arran:     'Arran — all additional works chargeable',
+  bute:      'Bute — some works included (TBC)',
+  mull:      'Mull — some works included (TBC)',
+  cumbrae:   'Cumbrae — most works included (TBC)',
+  skye:      'Skye — premium, most works included (TBC)',
+  cloakroom: 'Cloakroom Deal — chargeable works TBC',
+};
+
+document.getElementById('spec-package').addEventListener('change', function() {
+  document.getElementById('package-tag').textContent = PACKAGE_NOTES[this.value] || '';
+});
+
+document.getElementById('spec-date').value = new Date().toISOString().split('T')[0];
+
+// ── WORKS DEFINITIONS ──
+const REQUIRED_WORKS = [
+  'Bath/Tray Changeover',
+  'Shower Pipe Alterations',
+  'Re-Ply Floor',
+  'Level Access Tray (as existing)',
+  'Shower Tray Platform',
+  'Multi Selector',
+];
+
+const PLUMBING_REPOSITION = [
+  'Bath/Tray Reposition',
+  'Shower Reposition (ex electric)',
+  'Basin Reposition',
+  'Radiator Reposition',
+];
+
+const JOINERY_ITEMS = [
+  'Build Shower Wall',
+  'Shower Niche',
+  'Lower Ceiling',
+  'Bulkhead',
+];
+
+const FIXED_UPLIFTS = [
+  // Joinery
+  { label:'Strip and Re-Sheet Walls',      cat:'Joinery',   uplift:200 },
+  { label:'Renew Sub-Floor',               cat:'Joinery',   uplift:200 },
+  { label:'Internal Door',                 cat:'Joinery',   uplift:50  },
+  { label:'Window',                        cat:'Joinery',   uplift:100 },
+  // Plumbing
+  { label:'Full Bathroom Re-Pipe',         cat:'Plumbing',  uplift:150 },
+  { label:'WC Reposition',                 cat:'Plumbing',  uplift:200 },
+  { label:'Install Rad (no pipework)',     cat:'Plumbing',  uplift:75  },
+  { label:'Level Access Tray',             cat:'Plumbing',  uplift:150 },
+  // Electrical
+  { label:'Light Pull Cord/Switch',        cat:'Electrical', uplift:20 },
+  { label:'Shower Pull Cord/Switch',       cat:'Electrical', uplift:20 },
+  { label:'Shaver Socket',                 cat:'Electrical', uplift:20 },
+  { label:'Independent Mirror',            cat:'Electrical', uplift:30 },
+];
+
+// State
+const selectedRequired = new Set();
+const selectedPlumbing = new Set();
+const selectedJoinery  = new Set();
+const selectedFixed    = new Set();
+
+// Tiered uplift calculator
+function tieredUplift(count, tiers) {
+  // tiers: [{max, uplift}] sorted ascending
+  for (const t of tiers) { if (count <= t.max) return t.uplift; }
+  return tiers[tiers.length-1].uplift;
+}
+
+const REQ_TIERS   = [{max:2,uplift:0},{max:4,uplift:100},{max:6,uplift:200}];
+const JOIN_TIERS  = [{max:2,uplift:0},{max:4,uplift:100},{max:8,uplift:200}];
+// Plumbing reposition uses same joinery tiers
+const PLUMB_TIERS = [{max:2,uplift:0},{max:4,uplift:100},{max:8,uplift:200}];
+
+function buildCheckList(containerId, items, selectedSet, tiers, countElId, upliftElId) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = items.map((item, i) => `
+    <label class="work-check-item ${selectedSet.has(i)?'selected':''}" onclick="toggleWork('${containerId}',${i})">
+      <input type="checkbox" ${selectedSet.has(i)?'checked':''} onclick="event.stopPropagation();toggleWork('${containerId}',${i})">
+      ${item}
+    </label>
+  `).join('');
+  updateTieredSummary(selectedSet, tiers, countElId, upliftElId);
+}
+
+function toggleWork(containerId, idx) {
+  let set, items, tiers, countId, upliftId;
+  if (containerId==='required-works-list')    { set=selectedRequired; items=REQUIRED_WORKS;       tiers=REQ_TIERS;   countId='req-count';     upliftId='req-uplift'; }
+  if (containerId==='plumbing-reposition-list'){ set=selectedPlumbing; items=PLUMBING_REPOSITION; tiers=PLUMB_TIERS; countId='plumb-count';   upliftId='plumb-uplift'; }
+  if (containerId==='joinery-list')            { set=selectedJoinery;  items=JOINERY_ITEMS;       tiers=JOIN_TIERS;  countId='joinery-count'; upliftId='joinery-uplift'; }
+  if (!set) return;
+  if (set.has(idx)) set.delete(idx); else set.add(idx);
+  buildCheckList(containerId, items, set, tiers, countId, upliftId);
+  updateSpecTotals();
+}
+
+function updateTieredSummary(set, tiers, countId, upliftId) {
+  const n = set.size;
+  const uplift = tieredUplift(n, tiers);
+  document.getElementById(countId).textContent = n;
+  document.getElementById(upliftId).textContent = '£' + uplift;
+}
+
+function buildFixedList() {
+  const el = document.getElementById('fixed-uplifts-list');
+  el.innerHTML = FIXED_UPLIFTS.map((item, i) => `
+    <div class="work-fixed-item ${selectedFixed.has(i)?'selected':''}" onclick="toggleFixed(${i})">
+      <input type="checkbox" ${selectedFixed.has(i)?'checked':''} onclick="event.stopPropagation();toggleFixed(${i})">
+      <span class="wfi-label">${item.label}<br><span style="font-size:10px;color:var(--text-dim)">${item.cat}</span></span>
+      <span class="wfi-price">£${item.uplift}</span>
+    </div>
+  `).join('');
+}
+
+function toggleFixed(idx) {
+  if (selectedFixed.has(idx)) selectedFixed.delete(idx); else selectedFixed.add(idx);
+  buildFixedList();
+  updateSpecTotals();
+}
+
+function updateSpecTotals() {
+  const baseFee = parseFloat(document.getElementById('spec-base-fee').value) || 1150;
+
+  const reqUplift   = tieredUplift(selectedRequired.size, REQ_TIERS);
+  const plumbUplift = tieredUplift(selectedPlumbing.size, PLUMB_TIERS);
+  const joinUplift  = tieredUplift(selectedJoinery.size,  JOIN_TIERS);
+  let fixedUplift   = 0;
+  selectedFixed.forEach(i => { fixedUplift += FIXED_UPLIFTS[i].uplift; });
+
+  const totalFitterUplift = reqUplift + plumbUplift + joinUplift + fixedUplift;
+  const fitterTotal = baseFee + totalFitterUplift;
+  // Annick split TBC — placeholder 50% of uplift
+  const annickTotal = Math.round(totalFitterUplift * 0.5);
+  const custTotal   = totalFitterUplift;
+
+  document.getElementById('total-customer').textContent = '£' + custTotal.toLocaleString('en-GB');
+  document.getElementById('total-fitter').textContent   = '£' + fitterTotal.toLocaleString('en-GB');
+  document.getElementById('total-annick').textContent   = '£' + annickTotal.toLocaleString('en-GB');
+}
+
+// Initialise all lists
+buildCheckList('required-works-list',    REQUIRED_WORKS,      selectedRequired, REQ_TIERS,   'req-count',     'req-uplift');
+buildCheckList('plumbing-reposition-list',PLUMBING_REPOSITION, selectedPlumbing, PLUMB_TIERS, 'plumb-count',   'plumb-uplift');
+buildCheckList('joinery-list',           JOINERY_ITEMS,       selectedJoinery,  JOIN_TIERS,  'joinery-count', 'joinery-uplift');
+buildFixedList();
+updateSpecTotals();
 
 // Set initial active state properly
 document.getElementById('tool-room').classList.add('active');
