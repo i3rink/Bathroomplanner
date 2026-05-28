@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 46 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 48 — if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -295,6 +295,7 @@
   </div>
   <div style="display:flex;gap:6px;">
     <button class="btn warn" onclick="redrawRoom()">↺ Undo Last Room</button>
+    <button class="btn warn" onclick="undoLastNote()">✎ Undo Last Note</button>
     <button class="btn warn" onclick="deleteLast()">✕ Delete Last</button>
     <button class="btn danger" onclick="clearAll()">Clear All</button>
     <button class="btn" onclick="exportPNG()">🖼 Save PNG</button>
@@ -522,7 +523,6 @@
 
 <div class="bottom-bar">
   <span class="hint" id="hintText">Draw room: click and drag on the grid</span>
-  <button class="btn" onclick="undoLastNote()">✎ Undo Last Note</button>
   <button class="btn" onclick="undoLast()">↩ Undo</button>
 </div>
 </div><!-- end .workspace -->
@@ -1161,6 +1161,19 @@ function onDown(e) {
       resizeStart = {gx, gy, origW: curSel.w, origH: curSel.h, origBaseW: curSel.baseW || curSel.w, origBaseH: curSel.baseH || curSel.h};
       return;
     }
+    // Check notes before fixtures
+    const ni = noteHitTest(gx, gy);
+    if (ni >= 0) {
+      saveHistory();
+      selectedNote = ni;
+      selectedIdx = null;
+      noteDragStart = {gx, gy};
+      isDragging = true;
+      updateSelectedPanel();
+      render();
+      return;
+    }
+    selectedNote = null;
     const idx = hitTest(gx, gy);
     if (idx >= 0 && idx !== selectedIdx) saveHistory();
     selectedIdx = idx;
@@ -1170,6 +1183,18 @@ function onDown(e) {
     render();
 
   } else if (mode === 'note') {
+    // If clicking on existing note, switch to select and drag it
+    const existingNote = noteHitTest(gx, gy);
+    if (existingNote >= 0) {
+      saveHistory();
+      selectedNote = existingNote;
+      selectedIdx = null;
+      noteDragStart = {gx, gy};
+      isDragging = true;
+      setMode('select');
+      render();
+      return;
+    }
     pendingNotePos = {gx, gy};
     document.getElementById('noteInput').value = '';
     document.getElementById('noteModal').classList.add('open');
@@ -1181,8 +1206,14 @@ function onMove(e) {
   const {gx, gy, px, py} = getPos(e);
 
   const sel = safeItem();
-  if (mode === 'select' && !isDragging && !isResizing && sel) {
-    canvas.style.cursor = onResizeHandle(px, py, sel) ? 'nwse-resize' : 'default';
+  if (mode === 'select' && !isDragging && !isResizing) {
+    if (sel && onResizeHandle(px, py, sel)) {
+      canvas.style.cursor = 'nwse-resize';
+    } else if (noteHitTest(gx, gy) >= 0) {
+      canvas.style.cursor = 'grab';
+    } else {
+      canvas.style.cursor = 'default';
+    }
   }
 
   if (mode === 'room' && isDragging) {
@@ -2204,7 +2235,7 @@ function exportPDF() {
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 46 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 48 — if you can see this in Notepad, you have the right file -->
 <html>
 <head>
 <meta charset="UTF-8">
