@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL - VERSION 62 - if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL - VERSION 64 - if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1907,11 +1907,21 @@ function drawDimensionLines(item) {
   if (!item || !rooms.length) return;
   if (!['window','door'].includes(item.type)) return;
 
-  // Find the room section this item sits in (or nearest one)
+  // Find the room section this item belongs to, by its CENTRE point so
+  // edge/wall-flush placement still resolves to the right room rather than
+  // falling through to rooms[0] and producing wrong/missing distances.
+  const cxItem = item.x + item.w / 2;
+  const cyItem = item.y + item.h / 2;
   let room = rooms[0];
+  let bestOverlap = -1;
   rooms.forEach(r => {
-    if (item.x >= r.x && item.x < r.x + r.w &&
-        item.y >= r.y && item.y < r.y + r.h) room = r;
+    // Score by how close the item centre is to being inside this room
+    const insideX = cxItem >= r.x && cxItem <= r.x + r.w;
+    const insideY = cyItem >= r.y && cyItem <= r.y + r.h;
+    const dx = insideX ? 0 : Math.min(Math.abs(cxItem - r.x), Math.abs(cxItem - (r.x + r.w)));
+    const dy = insideY ? 0 : Math.min(Math.abs(cyItem - r.y), Math.abs(cyItem - (r.y + r.h)));
+    const score = -(dx + dy); // 0 when centre inside, more negative the further out
+    if (score > bestOverlap) { bestOverlap = score; room = r; }
   });
 
   const px = item.x * CELL, py = item.y * CELL;
@@ -1975,10 +1985,10 @@ function drawDimensionLines(item) {
     // Horizontal item (on top/bottom wall) - show left and right distances
     const lineY = py + ph / 2; // run lines through middle of item
 
-    if (dLeft > 0) {
+    if (dLeft >= 0) {
       drawDimLine(rpx, lineY, px, lineY, mmLeft + 'mm', false, 'left');
     }
-    if (dRight > 0) {
+    if (dRight >= 0) {
       drawDimLine(px + pw, lineY, rpx + rpw, lineY, mmRight + 'mm', false, 'right');
     }
     // Also show item width
@@ -1988,10 +1998,10 @@ function drawDimensionLines(item) {
     // Vertical item (on left/right wall) - show top and bottom distances
     const lineX = px + pw / 2;
 
-    if (dTop > 0) {
+    if (dTop >= 0) {
       drawDimLine(lineX, rpy, lineX, py, mmTop + 'mm', true, 'top');
     }
-    if (dBottom > 0) {
+    if (dBottom >= 0) {
       drawDimLine(lineX, py + ph, lineX, rpy + rph, mmBottom + 'mm', true, 'bottom');
     }
     // Also show item height
@@ -2245,7 +2255,7 @@ function exportPDF() {
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL - VERSION 62 - if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL - VERSION 64 - if you can see this in Notepad, you have the right file -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -2272,9 +2282,9 @@ function exportPDF() {
   .body { display:flex; gap:16px; flex:1; min-height:0; height:165mm; }
 
   /* DRAWING - takes up most of the space */
-  .drawing { flex:1; min-height:150mm; display:flex; align-items:center; justify-content:center;
+  .drawing { flex:1; min-height:0; display:flex; align-items:center; justify-content:center;
     border:1px solid #e0e4f0; border-radius:4px; overflow:hidden; background:#0f1117; padding:6px; }
-  .drawing img { width:100%; max-height:none; object-fit:contain; display:block; }
+  .drawing img { width:100%; height:100%; max-width:100%; max-height:100%; object-fit:contain; display:block; }
 
   /* INFO PANEL */
   .info { width:210px; flex-shrink:0; display:flex; flex-direction:column; gap:12px; }
