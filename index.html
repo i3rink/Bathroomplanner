@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 50 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 51 — if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -288,7 +288,7 @@
 
 <header>
   <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Menu">☰</button>
-  <canvas id="logoCanvas" width="180" height="32" style="display:block;cursor:default;"></canvas>
+  <canvas id="logoCanvas" width="240" height="28" style="display:block;cursor:default;"></canvas>
   <div class="job-info">
     <input type="text" id="jobId" placeholder="Job ID" maxlength="20">
     <input type="text" id="customerName" placeholder="Customer name" maxlength="30">
@@ -2233,7 +2233,7 @@ function exportPDF() {
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL — VERSION 50 — if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL — VERSION 51 — if you can see this in Notepad, you have the right file -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -2787,11 +2787,12 @@ document.getElementById('tool-room').classList.add('active');
 render();
 
 // ── PAC-MAN LOGO ANIMATION ──
+document.fonts.ready.then(() => {
 (function() {
   const lc = document.getElementById('logoCanvas');
   const lx = lc.getContext('2d');
   const TEXT    = 'ANNICK // SURVEY';
-  const FONT    = 'bold 13px DM Mono, monospace';
+  const FONT    = 'bold 12px DM Mono, monospace';
   const TEXT_COL = '#4f8ef7';
   const PAC_COL  = '#f7c94f';
   const DOT_COL  = '#4f8ef7';
@@ -2942,6 +2943,7 @@ render();
     requestAnimationFrame(loop);
   });
 })();
+}); // end document.fonts.ready
 </script>
 </body>
 </html>
