@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL - VERSION 65 - if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL - VERSION 66 - if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -2254,16 +2254,17 @@ function exportPDF() {
   cropCtx.drawImage(offscreen, cropX, cropY, cropW, cropH, 0, 0, cropW * SCALE, cropH * SCALE);
   const imgData = crop.toDataURL('image/png');
 
-  // Display size: scale drawing to a fixed width that fills the page, height follows aspect ratio.
-  // This is the explicit-pixel approach that worked before the object-fit regression.
-  const DISP_W = 760;
+  // Fit drawing within one landscape page: cap by both width and available height,
+  // keep aspect ratio. Page content area ~ 760px wide x 470px tall after header.
+  const MAX_W = 760, MAX_H = 470;
   const aspect = cropH / cropW;
-  const dispW = DISP_W;
-  const dispH = Math.round(DISP_W * aspect);
+  let dispW = MAX_W;
+  let dispH = Math.round(MAX_W * aspect);
+  if (dispH > MAX_H) { dispH = MAX_H; dispW = Math.round(MAX_H / aspect); }
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL - VERSION 65 - if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL - VERSION 66 - if you can see this in Notepad, you have the right file -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -2272,7 +2273,7 @@ function exportPDF() {
   @page { size: A4 landscape; margin: 12mm 14mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 11px;
-    color: #222; background: #fff; height: 100vh; display: flex; flex-direction: column; }
+    color: #222; background: #fff; }
 
   /* HEADER */
   .hd { display:flex; justify-content:space-between; align-items:center;
@@ -3001,4 +3002,3 @@ render();
 </script>
 </body>
 </html>
-
