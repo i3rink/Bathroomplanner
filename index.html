@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL - VERSION 66 - if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL - VERSION 56 - if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNiIgZmlsbD0iIzFhMWQyNyIvPgogIDwhLS0gQm9keSBkb21lIC0tPgogIDxwYXRoIGQ9Ik02LDIwIFE2LDggMTYsOCBRMjYsOCAyNiwyMCBMMjYsMjYgUTI0LDI0IDIyLDI2IFEyMCwyNCAxOCwyNiBRMTYsMjQgMTQsMjYgUTEyLDI0IDEwLDI2IFE4LDI0IDYsMjYgWiIgZmlsbD0iI2ZmMDA4MCIvPgogIDwhLS0gRXllcyB3aGl0ZSAtLT4KICA8ZWxsaXBzZSBjeD0iMTIiIGN5PSIxOCIgcng9IjMiIHJ5PSI0IiBmaWxsPSJ3aGl0ZSIvPgogIDxlbGxpcHNlIGN4PSIyMCIgY3k9IjE4IiByeD0iMyIgcnk9IjQiIGZpbGw9IndoaXRlIi8+CiAgPCEtLSBQdXBpbHMgLS0+CiAgPGNpcmNsZSBjeD0iMTMiIGN5PSIxOCIgcj0iMS41IiBmaWxsPSIjMDA0NGZmIi8+CiAgPGNpcmNsZSBjeD0iMjEiIGN5PSIxOCIgcj0iMS41IiBmaWxsPSIjMDA0NGZmIi8+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Annick Bathrooms - Survey Planner</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -145,7 +146,7 @@
   .tab-btn:hover { color:var(--text); }
   .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
   .tab-panel { display:none; flex:1; overflow:hidden; }
-  .tab-panel.active { display:flex; flex-direction:column; }
+  .tab-panel.active { display:flex; }
 
   /* ── SPEC TAB ── */
   .spec-wrap { flex:1; overflow-y:auto; padding:20px 24px; background:var(--bg); }
@@ -545,6 +546,7 @@
         <div>
           <div class="spec-label">Property Type</div>
           <select id="ps-property-type" class="spec-input">
+            <option value="" disabled selected></option>
             <option>Semi-Detached</option>
             <option>Detached</option>
             <option>Terraced</option>
@@ -558,6 +560,7 @@
         <div>
           <div class="spec-label">How Many Bathrooms?</div>
           <select id="ps-num-bathrooms" class="spec-input">
+            <option value="" disabled selected></option>
             <option>1</option>
             <option>2</option>
             <option>3</option>
@@ -567,6 +570,7 @@
         <div>
           <div class="spec-label">Room Being Surveyed</div>
           <select id="ps-room" class="spec-input">
+            <option value="" disabled selected></option>
             <option>Main Bathroom</option>
             <option>En-suite</option>
             <option>Cloakroom / WC</option>
@@ -584,6 +588,7 @@
         <div>
           <div class="spec-label">Heating Type</div>
           <select id="ps-heating" class="spec-input">
+            <option value="" disabled selected></option>
             <option>Combi Boiler</option>
             <option>System Boiler</option>
             <option>Gravity Fed (vented)</option>
@@ -597,6 +602,7 @@
         <div>
           <div class="spec-label">Stopcock Location</div>
           <select id="ps-stopcock" class="spec-input">
+            <option value="" disabled selected></option>
             <option>Under Kitchen Sink</option>
             <option>Under Stairs</option>
             <option>Utility Room</option>
@@ -610,6 +616,7 @@
         <div>
           <div class="spec-label">Known Water Escape?</div>
           <select id="ps-water-escape" class="spec-input">
+            <option value="" disabled selected></option>
             <option>No</option>
             <option>Yes - minor</option>
             <option>Yes - significant</option>
@@ -624,6 +631,7 @@
         <div>
           <div class="spec-label">Electrical Consumer Unit Location</div>
           <select id="ps-consumer-unit" class="spec-input">
+            <option value="" disabled selected></option>
             <option>Entrance Hall</option>
             <option>Kitchen</option>
             <option>Garage</option>
@@ -643,6 +651,7 @@
         <div>
           <div class="spec-label">Current Bathroom Suite</div>
           <select id="ps-current-suite" class="spec-input">
+            <option value="" disabled selected></option>
             <option>Full suite (bath, WC, basin)</option>
             <option>Shower room (shower, WC, basin)</option>
             <option>Wet room</option>
@@ -654,6 +663,7 @@
         <div>
           <div class="spec-label">Current Wall Coverings</div>
           <select id="ps-current-walls" class="spec-input">
+            <option value="" disabled selected></option>
             <option>Ceramic tiles</option>
             <option>Porcelain tiles</option>
             <option>Wall panels</option>
@@ -666,6 +676,7 @@
         <div>
           <div class="spec-label">Current Floor Covering</div>
           <select id="ps-current-floor" class="spec-input">
+            <option value="" disabled selected></option>
             <option>Vinyl / Lino</option>
             <option>Ceramic tiles</option>
             <option>Porcelain tiles</option>
@@ -680,6 +691,7 @@
         <div>
           <div class="spec-label">Ventilation Type</div>
           <select id="ps-ventilation-type" class="spec-input">
+            <option value="" disabled selected></option>
             <option>Window</option>
             <option>Extractor fan - wall</option>
             <option>Extractor fan - ceiling</option>
@@ -830,14 +842,19 @@
 
     <!-- Additional Works - Required Items (multi-select tiered) -->
     <div class="spec-section">
-      <div class="spec-section-title">Required Works</div>
+      <div class="spec-section-title">Required Works
+        <span style="font-size:10px;color:var(--text-dim);font-weight:400;margin-left:8px;">Tiered across all works - up to 2 free*, 3-4 = £100, 5+ = £200. </span>
+      </div>
       <div id="required-works-list" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;"></div>
+      <div style="display:flex;align-items:center;gap:16px;padding:8px 10px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);">
+        <span style="font-size:11px;color:var(--text-dim);">Fitter uplift: <strong id="req-uplift" style="color:var(--accent)">£0</strong></span>
+      </div>
     </div>
 
     <!-- Plumbing Reposition (multi-select tiered) -->
     <div class="spec-section">
       <div class="spec-section-title">Plumbing - Reposition
-        <span style="font-size:10px;color:var(--text-dim);font-weight:400;margin-left:8px;">Tiered across all works - up to 2 free*, 3-4 = £100, 5+ = £200. </span>
+        
       </div>
       <div id="plumbing-reposition-list" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;"></div>
 <span id="plumb-count" style="display:none">0</span><span id="plumb-uplift" style="display:none">£0</span>
@@ -846,7 +863,7 @@
     <!-- Joinery (multi-select tiered) -->
     <div class="spec-section">
       <div class="spec-section-title">Joinery
-        <span style="font-size:10px;color:var(--text-dim);font-weight:400;margin-left:8px;">Tiered across all works - up to 2 free*, 3-4 = £100, 5+ = £200. </span>
+        
       </div>
       <div id="joinery-list" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;"></div>
 <span id="joinery-count" style="display:none">0</span><span id="joinery-uplift" style="display:none">£0</span>
@@ -935,7 +952,7 @@ const FIXTURE_DEFS = {
   window:       { w:60,  h:10,  label:'Window',       color:'#a0e0ff', shape:'window',
                   hint:'Rotate to place on side walls.' },
   door:         { w:60,  h:20,  label:'Door',         color:'#f7a04f', shape:'door',
-                  hint:'Hinge dot shows pivot side. Select to see swing arc. R cycles hinge corner (NE/NW/SW/SE). Rotate to place on any wall.' },
+                  hint:'R cycles swing direction (NE/NW/SW/SE). Rotate item to place on any wall.' },
   towelrail:    { w:30,  h:5,  label:'Towel Rail',   color:'#f74f8e', shape:'rail',
                   hint:'Default 300×100mm. Rotate to place vertically.' },
   radiator:     { w:50,  h:4,  label:'Radiator',     color:'#f76a4f', shape:'radiator',
@@ -1360,8 +1377,7 @@ function render() {
   const validSel = (selectedIdx !== null && selectedIdx >= 0 && selectedIdx < items.length) ? selectedIdx : -1;
   items.forEach((item, i) => drawFixture(item, i === validSel));
   notes.forEach((n, i) => drawNote(n, i === selectedNote));
-  // Always show dimension lines for every window/door so selecting one doesn't hide another's measurements
-  items.forEach(item => { if (item.type === 'window' || item.type === 'door') drawDimensionLines(item); });
+  if (validSel >= 0) drawDimensionLines(items[validSel]);
 }
 
 function drawGrid() {
@@ -1552,14 +1568,6 @@ function drawDragPreview() {
     ctx.fillStyle='#ffffff'; ctx.font='bold 11px DM Mono, monospace'; ctx.textAlign='center';
     ctx.fillText(`${(dw*10).toFixed(0)}mm × ${(dh*10).toFixed(0)}mm`, x1+(x2-x1)/2, y1+(y2-y1)/2);
   }
-}
-
-// Pick the shorter sweep between two angles for the door swing arc (<=90deg quarter turn)
-function _arcAntiClock(a, b) {
-  let d = b - a;
-  while (d <= -Math.PI) d += Math.PI*2;
-  while (d > Math.PI) d -= Math.PI*2;
-  return d < 0; // true = anticlockwise
 }
 
 function drawFixture(item, selected) {
@@ -1763,68 +1771,47 @@ function drawFixture(item, selected) {
     ctx.setLineDash([]);
 
   } else if (def.shape==='door') {
-    // Door with architectural hinge-dot + swing-arc symbol.
-    // swingDir: 0=NE, 1=NW, 2=SW, 3=SE  (hinge corner + sweep direction)
+    // Door as rectangle with directional swing arrow
+    // swingDir: 0=NE, 1=NW, 2=SW, 3=SE
     const swingDir = item.swingDir || 0;
 
-    // Door frame outline
+    // Door frame - solid lines on three sides, open side dashed
     ctx.lineWidth = 2;
     ctx.strokeStyle = col;
+    // All four sides solid for the frame
     ctx.beginPath(); ctx.roundRect(-hw+3,-hh+3,hw*2-6,hh*2-6,2); ctx.stroke();
 
-    // Hinge corner + the corner the open leaf reaches toward, per swingDir.
-    // hinge = pivot point, openTo = far corner along the same wall edge.
-    const inset = 5;
-    const L = -hw+inset, R = hw-inset, T = -hh+inset, B = hh-inset;
-    const geo = [
-      { hinge:[L,B], openTo:[R,T] }, // 0 NE: hinge bottom-left, swings up-right
-      { hinge:[R,B], openTo:[L,T] }, // 1 NW: hinge bottom-right, swings up-left
-      { hinge:[R,T], openTo:[L,B] }, // 2 SW: hinge top-right, swings down-left
-      { hinge:[L,T], openTo:[R,B] }, // 3 SE: hinge top-left, swings down-right
+    // Diagonal swing arrow
+    // Arrow goes from one corner to the opposite, direction based on swingDir
+    const corners = [
+      { from:[-hw+6,-hh+6], to:[hw-6, hh-6] },  // 0: NW->SE (arrow points SE)
+      { from:[hw-6, -hh+6], to:[-hw+6, hh-6] },  // 1: NE->SW (arrow points SW)
+      { from:[hw-6,  hh-6], to:[-hw+6,-hh+6] },  // 2: SE->NW (arrow points NW)
+      { from:[-hw+6, hh-6], to:[hw-6, -hh+6] },  // 3: SW->NE (arrow points NE)
     ];
-    const g = geo[swingDir];
-    const hx=g.hinge[0], hy=g.hinge[1];
-    const ox=g.openTo[0], oy=g.openTo[1];
+    const dir = corners[swingDir];
+    const fx=dir.from[0], fy=dir.from[1], tx=dir.to[0], ty=dir.to[1];
 
-    // Leaf length = ~70% of door width, capped to fit the box
-    const fullSpan = Math.hypot(ox-hx, oy-hy);
-    const leafLen = Math.min(fullSpan, Math.min(hw,hh)*2-inset*2) * 0.7;
+    ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(fx,fy); ctx.lineTo(tx,ty); ctx.stroke();
+    ctx.setLineDash([]);
 
-    // Always-visible hinge dot (so orientation is readable even unselected)
-    ctx.fillStyle = col;
-    ctx.beginPath(); ctx.arc(hx, hy, 2.6, 0, Math.PI*2); ctx.fill();
+    // Arrowhead at end point
+    const angle = Math.atan2(ty-fy, tx-fx);
+    const aLen = 8;
+    ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(tx, ty);
+    ctx.lineTo(tx - aLen*Math.cos(angle-0.4), ty - aLen*Math.sin(angle-0.4));
+    ctx.moveTo(tx, ty);
+    ctx.lineTo(tx - aLen*Math.cos(angle+0.4), ty - aLen*Math.sin(angle+0.4));
+    ctx.stroke();
 
-    if (selected) {
-      // Leaf: solid line from hinge, 90deg toward the room interior (open position)
-      // Open edge points perpendicular to the wall the door sits on.
-      const wallIsHoriz = item.w >= item.h;
-      let leafEndX, leafEndY, arcStartX, arcStartY;
-      // Direction the leaf opens into the room: away from hinge along short axis
-      if (wallIsHoriz) {
-        // door on top/bottom wall: leaf opens vertically
-        const dirY = (hy < 0) ? 1 : -1; // hinge near top -> open downward, etc.
-        leafEndX = hx; leafEndY = hy + dirY*leafLen;
-        // closed-position edge: along the wall toward openTo
-        arcStartX = hx + Math.sign(ox-hx)*leafLen; arcStartY = hy;
-      } else {
-        const dirX = (hx < 0) ? 1 : -1;
-        leafEndX = hx + dirX*leafLen; leafEndY = hy;
-        arcStartX = hx; arcStartY = hy + Math.sign(oy-hy)*leafLen;
-      }
-
-      // Closed leaf (solid) along the wall
-      ctx.lineWidth = 2; ctx.setLineDash([]);
-      ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(arcStartX, arcStartY); ctx.stroke();
-
-      // Swing arc (dashed) from closed edge to open edge
-      const startAng = Math.atan2(arcStartY-hy, arcStartX-hx);
-      const endAng   = Math.atan2(leafEndY-hy, leafEndX-hx);
-      ctx.lineWidth = 1.5; ctx.setLineDash([4,3]);
-      ctx.beginPath();
-      ctx.arc(hx, hy, leafLen, startAng, endAng, _arcAntiClock(startAng, endAng));
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
+    // Small swing direction label
+    const swingLabels = ['→↑','←↑','←↓','→↓'];
+    ctx.font='bold 9px DM Sans,sans-serif';
+    ctx.fillStyle=col; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(swingLabels[swingDir], 0, 0);
 
   } else if (def.shape==='rail') {
     const railLen=hw*2-8;
@@ -1908,21 +1895,11 @@ function drawDimensionLines(item) {
   if (!item || !rooms.length) return;
   if (!['window','door'].includes(item.type)) return;
 
-  // Find the room section this item belongs to, by its CENTRE point so
-  // edge/wall-flush placement still resolves to the right room rather than
-  // falling through to rooms[0] and producing wrong/missing distances.
-  const cxItem = item.x + item.w / 2;
-  const cyItem = item.y + item.h / 2;
+  // Find the room section this item sits in (or nearest one)
   let room = rooms[0];
-  let bestOverlap = -1;
   rooms.forEach(r => {
-    // Score by how close the item centre is to being inside this room
-    const insideX = cxItem >= r.x && cxItem <= r.x + r.w;
-    const insideY = cyItem >= r.y && cyItem <= r.y + r.h;
-    const dx = insideX ? 0 : Math.min(Math.abs(cxItem - r.x), Math.abs(cxItem - (r.x + r.w)));
-    const dy = insideY ? 0 : Math.min(Math.abs(cyItem - r.y), Math.abs(cyItem - (r.y + r.h)));
-    const score = -(dx + dy); // 0 when centre inside, more negative the further out
-    if (score > bestOverlap) { bestOverlap = score; room = r; }
+    if (item.x >= r.x && item.x < r.x + r.w &&
+        item.y >= r.y && item.y < r.y + r.h) room = r;
   });
 
   const px = item.x * CELL, py = item.y * CELL;
@@ -1986,10 +1963,10 @@ function drawDimensionLines(item) {
     // Horizontal item (on top/bottom wall) - show left and right distances
     const lineY = py + ph / 2; // run lines through middle of item
 
-    if (dLeft >= 0) {
+    if (dLeft > 0) {
       drawDimLine(rpx, lineY, px, lineY, mmLeft + 'mm', false, 'left');
     }
-    if (dRight >= 0) {
+    if (dRight > 0) {
       drawDimLine(px + pw, lineY, rpx + rpw, lineY, mmRight + 'mm', false, 'right');
     }
     // Also show item width
@@ -1999,10 +1976,10 @@ function drawDimensionLines(item) {
     // Vertical item (on left/right wall) - show top and bottom distances
     const lineX = px + pw / 2;
 
-    if (dTop >= 0) {
+    if (dTop > 0) {
       drawDimLine(lineX, rpy, lineX, py, mmTop + 'mm', true, 'top');
     }
-    if (dBottom >= 0) {
+    if (dBottom > 0) {
       drawDimLine(lineX, py + ph, lineX, rpy + rph, mmBottom + 'mm', true, 'bottom');
     }
     // Also show item height
@@ -2172,8 +2149,12 @@ function exportPDF() {
   selectedFixed.forEach(i    => worksRowsArr.push({desc:FIXED_UPLIFTS[i].label,cat:FIXED_UPLIFTS[i].cat,uplift:'£'+FIXED_UPLIFTS[i].uplift}));
 
   const worksRowsHtml = worksRowsArr.length ? worksRowsArr.map(w =>
-    `<tr><td>${w.desc}</td><td>${w.cat}</td></tr>`
-  ).join('') : '<tr><td colspan="2" style="color:#aaa">None selected</td></tr>';
+    `<tr><td>${w.desc}</td><td>${w.cat}</td><td style="text-align:right">${w.uplift}</td></tr>`
+  ).join('') + `
+    <tr style="border-top:2px solid #dde;font-weight:700;">
+      <td colspan="2">Total fitter uplift</td>
+      <td style="text-align:right;color:#4f8ef7">£${fitterUpliftTotal}</td>
+    </tr>` : '<tr><td colspan="3" style="color:#aaa">None selected</td></tr>';
 
   // Panel calculator summary for PDF
   const panelChoice = document.getElementById('panelChoice');
@@ -2245,35 +2226,25 @@ function exportPDF() {
   render();
   ctx = savedCtx;
 
-  // Crop to drawn area, rendered at higher resolution so it stays sharp when scaled up on the page
-  const SCALE = 3;
+  // Crop to drawn area
   const crop = document.createElement('canvas');
-  crop.width = cropW * SCALE; crop.height = cropH * SCALE;
-  const cropCtx = crop.getContext('2d');
-  cropCtx.imageSmoothingEnabled = true;
-  cropCtx.drawImage(offscreen, cropX, cropY, cropW, cropH, 0, 0, cropW * SCALE, cropH * SCALE);
+  crop.width = cropW; crop.height = cropH;
+  crop.getContext('2d').drawImage(offscreen, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
   const imgData = crop.toDataURL('image/png');
-
-  // Fit drawing within one landscape page: cap by both width and available height,
-  // keep aspect ratio. Page content area ~ 760px wide x 470px tall after header.
-  const MAX_W = 760, MAX_H = 470;
-  const aspect = cropH / cropW;
-  let dispW = MAX_W;
-  let dispH = Math.round(MAX_W * aspect);
-  if (dispH > MAX_H) { dispH = MAX_H; dispW = Math.round(MAX_H / aspect); }
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL - VERSION 66 - if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL - VERSION 56 - if you can see this in Notepad, you have the right file -->
 <html>
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNiIgZmlsbD0iIzFhMWQyNyIvPgogIDwhLS0gQm9keSBkb21lIC0tPgogIDxwYXRoIGQ9Ik02LDIwIFE2LDggMTYsOCBRMjYsOCAyNiwyMCBMMjYsMjYgUTI0LDI0IDIyLDI2IFEyMCwyNCAxOCwyNiBRMTYsMjQgMTQsMjYgUTEyLDI0IDEwLDI2IFE4LDI0IDYsMjYgWiIgZmlsbD0iI2ZmMDA4MCIvPgogIDwhLS0gRXllcyB3aGl0ZSAtLT4KICA8ZWxsaXBzZSBjeD0iMTIiIGN5PSIxOCIgcng9IjMiIHJ5PSI0IiBmaWxsPSJ3aGl0ZSIvPgogIDxlbGxpcHNlIGN4PSIyMCIgY3k9IjE4IiByeD0iMyIgcnk9IjQiIGZpbGw9IndoaXRlIi8+CiAgPCEtLSBQdXBpbHMgLS0+CiAgPGNpcmNsZSBjeD0iMTMiIGN5PSIxOCIgcj0iMS41IiBmaWxsPSIjMDA0NGZmIi8+CiAgPGNpcmNsZSBjeD0iMjEiIGN5PSIxOCIgcj0iMS41IiBmaWxsPSIjMDA0NGZmIi8+Cjwvc3ZnPg==">
 <title>Survey - ${jobId} - ${name}</title>
 <style>
   @page { size: A4 landscape; margin: 12mm 14mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 11px;
-    color: #222; background: #fff; }
+    color: #222; background: #fff; height: 100vh; display: flex; flex-direction: column; }
 
   /* HEADER */
   .hd { display:flex; justify-content:space-between; align-items:center;
@@ -2288,12 +2259,12 @@ function exportPDF() {
   .hd-field .val { font-size:13px; font-weight:700; color:#222; }
 
   /* BODY */
-  .body { display:flex; gap:16px; align-items:flex-start; }
+  .body { display:flex; gap:16px; flex:1; min-height:0; }
 
   /* DRAWING - takes up most of the space */
-  .drawing { flex:1; display:flex; align-items:flex-start; justify-content:center;
+  .drawing { flex:1; display:flex; align-items:center; justify-content:center;
     border:1px solid #e0e4f0; border-radius:4px; overflow:hidden; background:#0f1117; padding:6px; }
-  .drawing img { display:block; border-radius:2px; }
+  .drawing img { max-width:100%; max-height:100%; object-fit:contain; display:block; }
 
   /* INFO PANEL */
   .info { width:210px; flex-shrink:0; display:flex; flex-direction:column; gap:12px; }
@@ -2325,7 +2296,7 @@ function exportPDF() {
 </div>
 
 <div class="body">
-  <div class="drawing"><img src="${imgData}" style="width:${dispW}px;height:${dispH}px;max-width:100%;object-fit:contain;"/></div>
+  <div class="drawing"><img src="${imgData}"/></div>
   <div class="info">
     <div>
       <div class="section-title">Room Dimensions</div>
@@ -2391,7 +2362,7 @@ function exportPDF() {
         color:#4f8ef7;border-bottom:1px solid #dde8ff;padding-bottom:3px;margin-bottom:6px;">Financial Summary</div>
       <table style="width:100%;border-collapse:collapse;font-size:11px;">
         <tr><td style="color:#666;padding:2px 0;">Base fitting fee</td><td style="font-weight:600;text-align:right">£${baseFee.toLocaleString('en-GB')}</td></tr>
-        <tr><td style="color:#666;padding:2px 0;">Additional works</td><td style="font-weight:600;text-align:right">£${custTotal.toLocaleString('en-GB')}</td></tr>
+        <tr><td style="color:#666;padding:2px 0;">Additional works (customer)</td><td style="font-weight:600;text-align:right">£${custTotal.toLocaleString('en-GB')}</td></tr>
         <tr style="border-top:1px solid #eee;"><td style="color:#333;font-weight:700;padding-top:4px;">Fitter total</td><td style="font-weight:700;text-align:right;color:#4f8ef7;">£${fitterTotal.toLocaleString('en-GB')}</td></tr>
 
       </table>
@@ -2407,6 +2378,7 @@ function exportPDF() {
         <tr style="border-bottom:1px solid #dde;">
           <th style="text-align:left;padding:3px 4px;color:#888;font-size:9px;text-transform:uppercase;letter-spacing:.08em">Description</th>
           <th style="text-align:left;padding:3px 4px;color:#888;font-size:9px;text-transform:uppercase;letter-spacing:.08em">Category</th>
+          <th style="text-align:right;padding:3px 4px;color:#888;font-size:9px;text-transform:uppercase;letter-spacing:.08em">Fitter uplift</th>
         </tr>
       </thead>
       <tbody>${worksRowsHtml}</tbody>
@@ -2772,8 +2744,7 @@ function toggleWork(containerId, idx) {
 
 function updateTieredSummary(set, tiers, countId, upliftId) {
   const n = set.size;
-  const countEl = document.getElementById(countId);
-  if (countEl) countEl.textContent = n;
+  document.getElementById(countId).textContent = n;
   // Show combined uplift on all three summary bars
   const combinedUplift = getCombinedTierUplift();
   const total = selectedPlumbing.size + selectedJoinery.size;
