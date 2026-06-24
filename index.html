@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL - VERSION 56 - if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL - VERSION 57 - if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -2234,7 +2234,7 @@ function exportPDF() {
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL - VERSION 56 - if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL - VERSION 57 - if you can see this in Notepad, you have the right file -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -2744,7 +2744,8 @@ function toggleWork(containerId, idx) {
 
 function updateTieredSummary(set, tiers, countId, upliftId) {
   const n = set.size;
-  document.getElementById(countId).textContent = n;
+  const cEl = document.getElementById(countId);
+  if (cEl) cEl.textContent = n;
   // Show combined uplift on all three summary bars
   const combinedUplift = getCombinedTierUplift();
   const total = selectedPlumbing.size + selectedJoinery.size;
