@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL - VERSION 57 - if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL - VERSION 58 - if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -59,6 +59,11 @@
     padding: 8px 10px; font-family: 'DM Mono', monospace; font-size: 12px; }
   .dim-row { display: flex; justify-content: space-between; color: var(--text-dim); margin-bottom: 2px; }
   .dim-row span:last-child { color: var(--accent); }
+  .dim-input { width:80px; background:transparent; border:1px solid var(--border); border-radius:5px;
+    color:var(--accent); font-family:'DM Mono',monospace; font-size:12px; padding:2px 6px; text-align:right; outline:none; }
+  .dim-input:focus { border-color:var(--accent); }
+  .dim-input:disabled { opacity:0.55; }
+  .dim-input::-webkit-outer-spin-button,.dim-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 
   .selected-panel { padding: 10px; border-bottom: 1px solid var(--border); display: none; }
   .selected-panel.visible { display: block; }
@@ -423,8 +428,8 @@
     <div class="sidebar-section">
       <div class="sidebar-label">Room size (total)</div>
       <div class="dim-display">
-        <div class="dim-row"><span>Width</span><span id="dimW">-</span></div>
-        <div class="dim-row"><span>Depth</span><span id="dimH">-</span></div>
+        <div class="dim-row"><span>Width</span><input id="dimW" class="dim-input" type="number" inputmode="numeric" min="10" step="10" value="2000" onchange="setRoomSize()" title="Type the room width in mm"></div>
+        <div class="dim-row"><span>Depth</span><input id="dimH" class="dim-input" type="number" inputmode="numeric" min="10" step="10" value="2000" onchange="setRoomSize()" title="Type the room depth in mm"></div>
         <div class="dim-row"><span>Area</span><span id="dimA">-</span></div>
       </div>
     </div>
@@ -1345,23 +1350,54 @@ document.getElementById('noteInput').addEventListener('keydown', e => { if (e.ke
 
 // ── DIMENSIONS ──
 function updateDims() {
-  if (!rooms.length) {
-    document.getElementById('dimW').textContent = '-';
-    document.getElementById('dimH').textContent = '-';
-    document.getElementById('dimA').textContent = '-';
-    return;
+  const wEl = document.getElementById('dimW');
+  const hEl = document.getElementById('dimH');
+  const aEl = document.getElementById('dimA');
+  if (rooms.length > 1) {
+    // Multiple sections: show the bounding total and lock direct editing
+    // (editing individual sections is handled separately).
+    const minX = Math.min(...rooms.map(r => r.x));
+    const minY = Math.min(...rooms.map(r => r.y));
+    const maxX = Math.max(...rooms.map(r => r.x + r.w));
+    const maxY = Math.max(...rooms.map(r => r.y + r.h));
+    if (document.activeElement !== wEl) wEl.value = ((maxX - minX) * MM_PER_CELL).toFixed(0);
+    if (document.activeElement !== hEl) hEl.value = ((maxY - minY) * MM_PER_CELL).toFixed(0);
+    wEl.disabled = hEl.disabled = true;
+  } else if (rooms.length === 1) {
+    if (document.activeElement !== wEl) wEl.value = rooms[0].w * MM_PER_CELL;
+    if (document.activeElement !== hEl) hEl.value = rooms[0].h * MM_PER_CELL;
+    wEl.disabled = hEl.disabled = false;
+  } else {
+    // No room yet: offer an editable default to type over
+    if (document.activeElement !== wEl) wEl.value = 2000;
+    if (document.activeElement !== hEl) hEl.value = 2000;
+    wEl.disabled = hEl.disabled = false;
   }
-  // Bounding box of all room sections
-  const minX = Math.min(...rooms.map(r => r.x));
-  const minY = Math.min(...rooms.map(r => r.y));
-  const maxX = Math.max(...rooms.map(r => r.x + r.w));
-  const maxY = Math.max(...rooms.map(r => r.y + r.h));
-  // Total area = sum of individual sections (may overlap slightly but good enough on site)
-  const totalArea = rooms.reduce((sum, r) => sum + r.w * r.h * 0.01, 0);
-  document.getElementById('dimW').textContent = ((maxX - minX) * 10).toFixed(0) + 'mm';
-  document.getElementById('dimH').textContent = ((maxY - minY) * 10).toFixed(0) + 'mm';
-  const areaM2 = rooms.reduce((sum, r) => sum + r.w * r.h * 10 * 10 / 1e6, 0);
-  document.getElementById('dimA').textContent = areaM2.toFixed(2) + 'm²';
+  const areaM2 = rooms.reduce((sum, r) => sum + r.w * r.h * MM_PER_CELL * MM_PER_CELL / 1e6, 0);
+  aEl.textContent = rooms.length ? areaM2.toFixed(2) + 'm²' : '-';
+}
+
+// Create (if none) or resize the single room from the typed Width/Depth (mm).
+function setRoomSize() {
+  if (rooms.length > 1) return; // bounding total isn't directly editable
+  const mmW = parseInt(document.getElementById('dimW').value, 10);
+  const mmH = parseInt(document.getElementById('dimH').value, 10);
+  if (!mmW || !mmH || mmW < 10 || mmH < 10) { updateDims(); return; }
+  const w = clamp(Math.round(mmW / MM_PER_CELL), 1, COLS);
+  const h = clamp(Math.round(mmH / MM_PER_CELL), 1, ROWS);
+  saveHistory();
+  if (rooms.length === 0) {
+    // Centre the new room on the grid, like a freshly drawn one
+    rooms.push({ x: Math.floor((COLS - w) / 2), y: Math.floor((ROWS - h) / 2), w, h });
+  } else {
+    const r = rooms[0];
+    r.w = w; r.h = h;
+    if (r.x + r.w > COLS) r.x = Math.max(0, COLS - r.w);
+    if (r.y + r.h > ROWS) r.y = Math.max(0, ROWS - r.h);
+  }
+  updateDims();
+  render();
+  calcPanels();
 }
 
 // ═══════════════════════════════
@@ -2234,7 +2270,7 @@ function exportPDF() {
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
-<!-- ANNICK SURVEY TOOL - VERSION 57 - if you can see this in Notepad, you have the right file -->
+<!-- ANNICK SURVEY TOOL - VERSION 58 - if you can see this in Notepad, you have the right file -->
 <html>
 <head>
 <meta charset="UTF-8">
