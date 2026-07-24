@@ -2173,7 +2173,7 @@ function exportPDF() {
   selectedFixed.forEach(i    => worksRowsArr.push({desc:FIXED_UPLIFTS[i].label,cat:FIXED_UPLIFTS[i].cat,uplift:'£'+FIXED_UPLIFTS[i].uplift}));
 
   const worksRowsHtml = worksRowsArr.length ? worksRowsArr.map(w =>
-    `<tr><td>${w.desc}</td><td>${w.cat}</td></tr>`
+    `<tr><td>${w.desc}</td><td>${w.cat}</td><td style="text-align:right">${w.uplift}</td></tr>`
   ).join('') : '<tr><td colspan="2" style="color:#aaa">None selected</td></tr>';
 
   // Panel calculator summary for PDF
@@ -2408,6 +2408,7 @@ function exportPDF() {
         <tr style="border-bottom:1px solid #dde;">
           <th style="text-align:left;padding:3px 4px;color:#888;font-size:9px;text-transform:uppercase;letter-spacing:.08em">Description</th>
           <th style="text-align:left;padding:3px 4px;color:#888;font-size:9px;text-transform:uppercase;letter-spacing:.08em">Category</th>
+          <th style="text-align:right;padding:3px 4px;color:#888;font-size:9px;text-transform:uppercase;letter-spacing:.08em">Charge</th>
         </tr>
       </thead>
       <tbody>${worksRowsHtml}</tbody>
